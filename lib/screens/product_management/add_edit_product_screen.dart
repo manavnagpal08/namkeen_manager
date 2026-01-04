@@ -23,6 +23,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   String? _categoryId;
   String? _defaultSizeId;
   List<String> _selectedSizeIds = [];
+  final Map<String, TextEditingController> _priceControllers = {};
 
   @override
   void initState() {
@@ -32,6 +33,23 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _categoryId = widget.product?.categoryId;
     _defaultSizeId = widget.product?.defaultSizeId;
     _selectedSizeIds = List.from(widget.product?.availableSizeIds ?? [], growable: true);
+    
+    // Initialize price controllers
+    if (widget.product != null) {
+      widget.product!.sizePrices.forEach((sizeId, price) {
+        _priceControllers[sizeId] = TextEditingController(text: price.toString());
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    for (var controller in _priceControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -118,23 +136,43 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     
                     return Column(
                       children: sizes.map((size) {
-                        return CheckboxListTile(
-                          title: Text(size.label),
-                          subtitle: Text('${size.weightInGrams}g ${size.isBulk ? '(Bulk)' : ''}'),
-                          value: _selectedSizeIds.contains(size.id),
-                          onChanged: (bool? selected) {
-                            setState(() {
-                              if (selected == true) {
-                                _selectedSizeIds.add(size.id);
-                                _defaultSizeId ??= size.id;
-                              } else {
-                                _selectedSizeIds.remove(size.id);
-                                if (_defaultSizeId == size.id) {
-                                  _defaultSizeId = _selectedSizeIds.isNotEmpty ? _selectedSizeIds.first : null;
-                                }
-                              }
-                            });
-                          },
+                        final isSelected = _selectedSizeIds.contains(size.id);
+                        return Column(
+                           children: [
+                             CheckboxListTile(
+                               title: Text(size.label),
+                               subtitle: Text('${size.weightInGrams}g ${size.isBulk ? '(Bulk)' : ''}'),
+                               value: isSelected,
+                               onChanged: (bool? selected) {
+                                 setState(() {
+                                   if (selected == true) {
+                                     _selectedSizeIds.add(size.id);
+                                     _defaultSizeId ??= size.id;
+                                     _priceControllers.putIfAbsent(size.id, () => TextEditingController());
+                                   } else {
+                                     _selectedSizeIds.remove(size.id);
+                                     if (_defaultSizeId == size.id) {
+                                       _defaultSizeId = _selectedSizeIds.isNotEmpty ? _selectedSizeIds.first : null;
+                                     }
+                                   }
+                                 });
+                               },
+                             ),
+                             if (isSelected)
+                               Padding(
+                                 padding: const EdgeInsets.fromLTRB(48, 0, 16, 16),
+                                 child: TextFormField(
+                                   controller: _priceControllers.putIfAbsent(size.id, () => TextEditingController()),
+                                   keyboardType: TextInputType.number,
+                                   decoration: const InputDecoration(
+                                     labelText: 'Selling Price (₹)',
+                                     isDense: true,
+                                     prefixText: '₹ ',
+                                     border: OutlineInputBorder(),
+                                   ),
+                                 ),
+                               ),
+                           ],
                         );
                       }).toList(),
                     );
@@ -190,6 +228,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       }
     }
     
+    // Collect prices
+    final Map<String, double> prices = {};
+    for (var sizeId in _selectedSizeIds) {
+      if (_priceControllers.containsKey(sizeId)) {
+        prices[sizeId] = double.tryParse(_priceControllers[sizeId]!.text) ?? 0.0;
+      }
+    }
+
     final product = ProductModel(
       id: widget.product?.id ?? '',
       name: _nameController.text.trim(),
@@ -197,6 +243,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       description: _descController.text.trim(),
       defaultSizeId: _defaultSizeId ?? _selectedSizeIds.first,
       availableSizeIds: _selectedSizeIds,
+      sizePrices: prices,
     );
 
     try {

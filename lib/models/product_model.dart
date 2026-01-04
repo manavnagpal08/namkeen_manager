@@ -5,6 +5,7 @@ class ProductModel {
   final String description;
   final String defaultSizeId;
   final List<String> availableSizeIds;
+  final Map<String, double> sizePrices; // Map<SizeId, Price>
 
   ProductModel({
     required this.id,
@@ -13,6 +14,7 @@ class ProductModel {
     this.description = '',
     required this.defaultSizeId,
     this.availableSizeIds = const [],
+    this.sizePrices = const {},
   });
 
   factory ProductModel.fromMap(String id, Map<String, dynamic> data) {
@@ -23,6 +25,7 @@ class ProductModel {
       description: data['description'] ?? '',
       defaultSizeId: data['default_size_id'] ?? '',
       availableSizeIds: List<String>.from(data['available_size_ids'] ?? []),
+      sizePrices: (data['size_prices'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, (v as num).toDouble())) ?? {},
     );
   }
 
@@ -33,6 +36,7 @@ class ProductModel {
       'description': description,
       'default_size_id': defaultSizeId,
       'available_size_ids': availableSizeIds,
+      'size_prices': sizePrices,
     };
   }
 }

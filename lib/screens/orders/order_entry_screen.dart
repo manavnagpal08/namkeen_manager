@@ -437,8 +437,9 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
     }
 
     final qtyCtrl = TextEditingController(text: '1');
-    final priceCtrl = TextEditingController(text: '0'); 
     String sizeId = product.defaultSizeId;
+    final double defaultPrice = product.sizePrices[sizeId] ?? 0.0;
+    final priceCtrl = TextEditingController(text: defaultPrice.toString());
 
     showDialog(
       context: context,
