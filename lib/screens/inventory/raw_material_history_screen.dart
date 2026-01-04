@@ -149,7 +149,7 @@ class RawMaterialHistoryScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppTheme.mainGradient,
+        gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))],
       ),

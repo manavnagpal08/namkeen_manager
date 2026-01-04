@@ -76,4 +76,13 @@ class AppTheme {
     ],
     stops: [0.0, 0.5, 1.0],
   );
+  // Primary Gradient for Header Cards (Darker for White Text)
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF2563EB), // Primary Royal Blue
+      Color(0xFF60A5FA), // Lighter Blue
+    ],
+  );
 }
