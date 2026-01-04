@@ -43,7 +43,7 @@ class StockService {
          if (snapshot.exists) {
            double currentStock = (snapshot.get('currentStock') ?? 0).toDouble();
            double deduction = ingredient.quantityRequired * multiplier;
-           print('Deducting $deduction from ${ingredient.rawMaterialName} (Current: $currentStock)');
+           print('Deducting $deduction from ${ingredient.rawMaterialId} (Current: $currentStock)');
            
            transaction.update(materialRef, {'currentStock': currentStock - deduction});
            
