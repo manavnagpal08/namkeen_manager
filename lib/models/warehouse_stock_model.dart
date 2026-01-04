@@ -4,6 +4,7 @@ class WarehouseStockModel {
   final String categoryId;
   final String sizeId;
   final String batchId;
+  final String batchCode; // Human readable
   final double quantityPackets;
   final double quantityBoxes;
   final double quantityMasterCartons;
@@ -18,6 +19,7 @@ class WarehouseStockModel {
     required this.categoryId,
     required this.sizeId,
     required this.batchId,
+    this.batchCode = '',
     required this.quantityPackets,
     required this.quantityBoxes,
     required this.quantityMasterCartons,
@@ -33,6 +35,7 @@ class WarehouseStockModel {
       'categoryId': categoryId,
       'sizeId': sizeId,
       'batchId': batchId,
+      'batchCode': batchCode,
       'quantityPackets': quantityPackets,
       'quantityBoxes': quantityBoxes,
       'quantityMasterCartons': quantityMasterCartons,
@@ -50,6 +53,7 @@ class WarehouseStockModel {
       categoryId: map['categoryId'] ?? '',
       sizeId: map['sizeId'] ?? '',
       batchId: map['batchId'] ?? '',
+      batchCode: map['batchCode'] ?? '', // Default to empty if missing
       quantityPackets: (map['quantityPackets'] ?? 0).toDouble(),
       quantityBoxes: (map['quantityBoxes'] ?? 0).toDouble(),
       quantityMasterCartons: (map['quantityMasterCartons'] ?? 0).toDouble(),

@@ -224,6 +224,7 @@ class _ManufacturingAssignmentScreenState extends State<ManufacturingAssignmentS
                   final assignment = AssignmentModel(
                     id: '',
                     batchId: widget.batch.id,
+                    batchCode: widget.batch.batchCode,
                     employeeId: _selectedEmployeeId!,
                     type: 'Manufacturing',
                     status: 'Assigned',

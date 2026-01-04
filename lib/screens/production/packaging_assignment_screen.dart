@@ -229,6 +229,7 @@ class _PackagingAssignmentScreenState extends State<PackagingAssignmentScreen> {
                            final assignment = AssignmentModel(
                              id: '',
                              batchId: widget.batch.id,
+                             batchCode: widget.batch.batchCode,
                              employeeId: _selectedEmployeeId!,
                              type: 'Packaging',
                              status: 'Assigned',
@@ -366,6 +367,7 @@ class _PackagingAssignmentScreenState extends State<PackagingAssignmentScreen> {
         assignmentId: task.id,
         actualProducedPackets: actualQty,
         batchId: widget.batch.id,
+        batchCode: widget.batch.batchCode,
         productId: widget.batch.productId,
         sizeId: widget.batch.sizeId,
         categoryId: 'Unknown', // Ideally BatchModel should have categoryId, or we fetch product. 

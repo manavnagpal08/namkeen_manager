@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AssignmentModel {
   final String id;
   final String batchId;
+  final String batchCode; // Added for display
   final String employeeId;
   final String type; // manufacturing, packaging
   final double completedUnits;
@@ -15,6 +16,7 @@ class AssignmentModel {
   AssignmentModel({
     required this.id,
     required this.batchId,
+    this.batchCode = '',
     required this.employeeId,
     required this.type,
     required this.targetQuantity,
@@ -29,6 +31,7 @@ class AssignmentModel {
     return AssignmentModel(
       id: id,
       batchId: data['batch_id'] ?? '',
+      batchCode: data['batch_code'] ?? '',
       employeeId: data['employee_id'] ?? '',
       type: data['type'] ?? '',
       targetQuantity: (data['target_quantity'] ?? 0).toDouble(),
@@ -43,6 +46,7 @@ class AssignmentModel {
   Map<String, dynamic> toMap() {
     return {
       'batch_id': batchId,
+      'batch_code': batchCode,
       'employee_id': employeeId,
       'type': type,
       'target_quantity': targetQuantity,

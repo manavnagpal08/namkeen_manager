@@ -300,7 +300,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
       separatorBuilder: (_,__) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final task = tasks[index];
-        final bCode = batchMap[task.batchId] ?? task.batchId;
+        final bCode = task.batchCode.isNotEmpty ? task.batchCode : (batchMap[task.batchId] ?? task.batchId);
 
         return InkWell(
           onTap: () {

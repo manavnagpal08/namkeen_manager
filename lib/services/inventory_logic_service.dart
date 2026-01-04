@@ -11,6 +11,7 @@ class InventoryLogicService {
     required String assignmentId,
     required double actualProducedPackets,
     required String batchId,
+    required String batchCode, // Added param
     required String productId,
     required String sizeId,
     required String categoryId,
@@ -52,6 +53,7 @@ class InventoryLogicService {
       categoryId: categoryId,
       sizeId: sizeId,
       batchId: batchId,
+      batchCode: batchCode,
       warehouseUnitId: 'Main Warehouse', // Default for now
       storageAreaId: storageAreaId,
       inchargeEmployeeId: employeeId,

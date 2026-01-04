@@ -128,7 +128,7 @@ class RawMaterialHistoryScreen extends StatelessWidget {
                           child: ListTile(
                             leading: CircleAvatar(backgroundColor: Colors.orange.withValues(alpha: 0.2), child: const Icon(Icons.history, color: Colors.orange, size: 16)),
                             title: Text('Used in ${task.type}'),
-                            subtitle: Text('Batch: ${task.batchId} • ${DateFormat.yMMMd().format(task.assignedAt)}'),
+                            subtitle: Text('Batch: ${task.batchCode.isNotEmpty ? task.batchCode : task.batchId} • ${DateFormat.yMMMd().format(task.assignedAt)}'),
                             trailing: Text('-$qty ${material.unit}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
                           ),
                         );

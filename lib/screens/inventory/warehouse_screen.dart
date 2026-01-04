@@ -82,7 +82,7 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                           if (_searchQuery.isNotEmpty) {
                             stocks = stocks.where((s) {
                               final pName = productMap[s.productId]?.toLowerCase() ?? '';
-                              final bCode = batchMap[s.batchId]?.toLowerCase() ?? s.batchId.toLowerCase();
+                              final bCode = s.batchCode.isNotEmpty ? s.batchCode.toLowerCase() : (batchMap[s.batchId]?.toLowerCase() ?? s.batchId.toLowerCase());
                               return pName.contains(_searchQuery) || bCode.contains(_searchQuery);
                             }).toList();
                           }
@@ -97,7 +97,7 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                             itemBuilder: (context, index) {
                               final stock = stocks[index];
                               final pName = productMap[stock.productId] ?? 'Unknown Product';
-                              final bCode = batchMap[stock.batchId] ?? stock.batchId;
+                              final bCode = stock.batchCode.isNotEmpty ? stock.batchCode : (batchMap[stock.batchId] ?? stock.batchId);
                               
                               // Aging Logic
                               final ageDays = DateTime.now().difference(stock.updatedAt).inDays;
