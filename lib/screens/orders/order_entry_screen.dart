@@ -472,27 +472,34 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
       }
     }
 
-    // Deduct Stock
-    for (var item in _cart) {
-       await db.deductWarehouseStock(item.productId, item.quantity);
-    }
-
-    final order = OrderModel(
-      id: '',
-      customerName: _customerCtrl.text.isEmpty ? 'Walk-in' : _customerCtrl.text,
-      date: DateTime.now(),
-      totalAmount: _totalAmount,
-      items: _cart,
-      status: 'Paid', 
-      gstPercentage: _applyGst ? currentGstRate : 0.0,
-      gstAmount: _gstAmount,
-    );
-
-    await db.addOrder(order);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order Saved & Stock Deducted!')));
-      Navigator.pop(context); 
-      Navigator.push(context, MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(order: order)));
+    try {
+      // Deduct Stock
+      for (var item in _cart) {
+         await db.deductWarehouseStock(item.productId, item.quantity);
+      }
+  
+      final order = OrderModel(
+        id: '',
+        customerName: _customerCtrl.text.isEmpty ? 'Walk-in' : _customerCtrl.text,
+        date: DateTime.now(),
+        totalAmount: _totalAmount,
+        items: _cart,
+        status: 'Paid', 
+        gstPercentage: _applyGst ? currentGstRate : 0.0,
+        gstAmount: _gstAmount,
+      );
+  
+      await db.addOrder(order);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order Saved & Stock Deducted!')));
+        Navigator.pop(context); 
+        Navigator.push(context, MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(order: order)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving order: $e'), backgroundColor: Colors.red));
+      }
     }
   }
 }
