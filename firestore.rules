@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Allow read/write to all collections for authenticated users (Dev Mode)
+    // In production, lock this down to specific roles!
+    match /{document=**} {
+      allow read, write: if true; 
+    }
+    
+    // Specific Collections (Examples for future tightening)
+    // match /raw_materials/{material} {
+    //   allow read: if true;
+    //   allow write: if isAuthenticated();
+    // }
+    
+    // match /orders/{order} {
+    //   allow read, write: if isAuthenticated();
+    // }
+  }
+}

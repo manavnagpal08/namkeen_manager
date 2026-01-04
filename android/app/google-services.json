@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "342882623214",
+    "project_id": "sangambyfc",
+    "storage_bucket": "sangambyfc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:342882623214:android:b6cafa127ee25d48905dff",
+        "android_client_info": {
+          "package_name": "com.namkeen.factory.namkeen_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0f4qgC6ih4ZlgY8mmgzhULljzRJeMN-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
