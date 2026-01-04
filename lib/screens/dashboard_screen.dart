@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/namkeen_theme.dart';
 import '../core/glass_container.dart';
 import 'package:provider/provider.dart';
@@ -39,15 +41,39 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0; // For Desktop Rail
-  // We track the current "Page" widget for the desktop shell. 
-  // Null means "Dashboard Home"
   Widget? _currentDesktopPage; 
+  
+  // Tour Keys
+  final GlobalKey _keyStats = GlobalKey();
+  final GlobalKey _keyTasks = GlobalKey();
+  final GlobalKey _keyActions = GlobalKey();
+  bool _tourStarted = false;
+
+  void _checkTour(BuildContext context) async {
+    if (_tourStarted) return;
+    _tourStarted = true;
+    final prefs = await SharedPreferences.getInstance();
+    // Force tour for debugging if needed, or check bool
+    if (prefs.getBool('seen_dashboard_tour') != true) {
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+             ShowCaseWidget.of(context).startShowCase([_keyStats, _keyTasks, _keyActions]);
+             prefs.setBool('seen_dashboard_tour', true);
+          }
+       });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveLayout(
-      mobileBody: _buildMobileLayout(context),
-      desktopBody: _buildDesktopLayout(context),
+    return ShowCaseWidget(
+      builder: Builder(builder: (context) {
+        _checkTour(context);
+        return ResponsiveLayout(
+          mobileBody: _buildMobileLayout(context),
+          desktopBody: _buildDesktopLayout(context),
+        );
+      }),
     );
   }
 
@@ -452,7 +478,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatGrid(BuildContext context, {bool isDesktop = false}) {
     final db = Provider.of<DatabaseService>(context, listen: false);
 
-    return GridView.count(
+    return Showcase(
+      key: _keyStats,
+      title: 'Factory Overview',
+      description: 'Track Raw Material, Active Batches, and Warehouse Stock at a glance.',
+      child: GridView.count(
       crossAxisCount: isDesktop ? 4 : 2, 
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
@@ -501,6 +531,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         ),
       ],
+    ),
     );
   }
   
@@ -548,7 +579,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final auth = Provider.of<AuthService>(context);
     final role = auth.currentAccount?.role ?? auth.currentUser?.role ?? 'Guest';
 
-    return Column(
+    return Showcase(
+      key: _keyActions,
+      title: 'Quick Actions',
+      description: 'Instant access to create Orders, assign Batches, and manage Dispatch.',
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -581,6 +616,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 24),
         
       ],
+    ),
     );
   }
   
@@ -608,7 +644,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final db = Provider.of<DatabaseService>(context, listen: false);
     final today = DateTime.now();
 
-    return Column(
+    return Showcase(
+      key: _keyTasks,
+      title: 'Daily Tasks',
+      description: 'View and manage all manufacturing & packaging jobs assigned for today.',
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text("Today's Task Definer", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -686,6 +726,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         ),
       ],
+    ),
     );
   }
 

@@ -197,15 +197,9 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (success) {
         if (mounted) {
-           // Check if user has seen onboarding
-           final prefs = await SharedPreferences.getInstance();
-           final bool seen = prefs.getBool('has_seen_onboarding') ?? false;
-
-           if (!mounted) return;
-
            Navigator.pushReplacement(
              context, 
-             MaterialPageRoute(builder: (_) => seen ? const DashboardScreen() : const OnboardingScreen()),
+             MaterialPageRoute(builder: (_) => const DashboardScreen()),
            );
         }
       } else {
