@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/raw_material_model.dart';
-import '../../core/glass_container.dart';
+// import '../../core/glass_container.dart'; // Removing unused import
 
 class RawMaterialHistoryScreen extends StatelessWidget {
   final RawMaterialModel material;
@@ -37,62 +37,67 @@ class RawMaterialHistoryScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-             return _buildEmptyState();
-          }
-
-          final logs = snapshot.data!.docs;
+          final logs = snapshot.hasData ? snapshot.data!.docs : [];
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+               // 1. Live Header
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance.collection('raw_materials').doc(material.id).snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || !snapshot.exists) return _buildHeaderCard(material); // Fallback
-                  final liveMaterial = RawMaterialModel.fromMap(snapshot.data!.id, snapshot.data!.data() as Map<String, dynamic>);
+                builder: (context, headerSnap) {
+                  if (!headerSnap.hasData || !headerSnap.data!.exists) return _buildHeaderCard(material); 
+                  final liveMaterial = RawMaterialModel.fromMap(headerSnap.data!.id, headerSnap.data!.data() as Map<String, dynamic>);
                   return _buildHeaderCard(liveMaterial);
                 },
               ),
+
                const SizedBox(height: 24),
                const Text('Transaction Log', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                const SizedBox(height: 12),
-               ...logs.map((doc) {
-                 final data = doc.data() as Map<String, dynamic>;
-                 final double change = (data['changeAmount'] ?? 0).toDouble();
-                 final bool isPositive = change > 0;
-                 final date = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
-                 final reason = data['reason'] ?? 'Manual Update';
-                 
-                 return Container(
-                   margin: const EdgeInsets.only(bottom: 12),
-                   decoration: BoxDecoration(
-                     color: Colors.white,
-                     borderRadius: BorderRadius.circular(12),
-                     boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0,2))],
-                   ),
-                   child: ListTile(
-                     leading: CircleAvatar(
-                       backgroundColor: isPositive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
-                       child: Icon(
-                         isPositive ? Icons.arrow_downward : Icons.arrow_upward,
-                         color: isPositive ? Colors.green : Colors.red,
-                         size: 20,
-                       ),
+               
+               if (logs.isEmpty) 
+                 const Padding(
+                   padding: EdgeInsets.all(32.0),
+                   child: Center(child: Text("No history yet", style: TextStyle(color: Colors.grey))),
+                 )
+               else
+                 ...logs.map((doc) {
+                   final data = doc.data() as Map<String, dynamic>;
+                   final double change = (data['changeAmount'] ?? 0).toDouble();
+                   final bool isPositive = change > 0;
+                   final date = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+                   final reason = data['reason'] ?? 'Manual Update';
+                   
+                   return Container(
+                     margin: const EdgeInsets.only(bottom: 12),
+                     decoration: BoxDecoration(
+                       color: Colors.white,
+                       borderRadius: BorderRadius.circular(12),
+                       boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0,2))],
                      ),
-                     title: Text(reason, style: const TextStyle(fontWeight: FontWeight.w600)),
-                     subtitle: Text(DateFormat('MMM d, y • h:mm a').format(date)),
-                     trailing: Text(
-                       '${isPositive ? '+' : ''}$change ${material.unit}',
-                       style: TextStyle(
-                         color: isPositive ? Colors.green : Colors.red,
-                         fontWeight: FontWeight.bold,
-                         fontSize: 16,
+                     child: ListTile(
+                       leading: CircleAvatar(
+                         backgroundColor: isPositive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                         child: Icon(
+                           isPositive ? Icons.arrow_downward : Icons.arrow_upward,
+                           color: isPositive ? Colors.green : Colors.red,
+                           size: 20,
+                         ),
+                       ),
+                       title: Text(reason, style: const TextStyle(fontWeight: FontWeight.w600)),
+                       subtitle: Text(DateFormat('MMM d, y • h:mm a').format(date)),
+                       trailing: Text(
+                         '${isPositive ? '+' : ''}$change ${material.unit}',
+                         style: TextStyle(
+                           color: isPositive ? Colors.green : Colors.red,
+                           fontWeight: FontWeight.bold,
+                           fontSize: 16,
                        ),
                      ),
                    ),
                  );
-               }),
+               }), 
                const SizedBox(height: 80), // Fab space
             ],
           );
