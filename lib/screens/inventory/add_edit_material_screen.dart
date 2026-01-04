@@ -80,11 +80,17 @@ class _AddEditMaterialScreenState extends State<AddEditMaterialScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _currentStockController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Current Stock'),
-                    ),
+                      child: TextFormField(
+                        controller: _currentStockController,
+                        keyboardType: TextInputType.number,
+                        readOnly: widget.material != null,
+                        decoration: InputDecoration(
+                          labelText: 'Current Stock',
+                          helperText: widget.material != null ? 'Use History to adjust' : null,
+                          filled: widget.material != null,
+                          fillColor: Colors.grey[100],
+                        ),
+                      ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

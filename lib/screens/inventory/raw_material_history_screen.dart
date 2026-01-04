@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/raw_material_model.dart';
-import '../../models/assignment_model.dart';
-import '../../services/database_service.dart';
+import '../../core/glass_container.dart';
 
 class RawMaterialHistoryScreen extends StatelessWidget {
   final RawMaterialModel material;
@@ -12,122 +11,248 @@ class RawMaterialHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final db = Provider.of<DatabaseService>(context);
-
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text('${material.name} History'),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showRestockDialog(context),
+        backgroundColor: AppTheme.secondary,
+        icon: const Icon(Icons.add_shopping_cart),
+        label: const Text('Restock / Inward'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('raw_materials')
+            .doc(material.id)
+            .collection('history')
+            .orderBy('date', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+             return _buildEmptyState();
+          }
+
+          final logs = snapshot.data!.docs;
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection('raw_materials').doc(material.id).snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || !snapshot.exists) return _buildHeaderCard(material); // Fallback
+                  final liveMaterial = RawMaterialModel.fromMap(snapshot.data!.id, snapshot.data!.data() as Map<String, dynamic>);
+                  return _buildHeaderCard(liveMaterial);
+                },
+              ),
+               const SizedBox(height: 24),
+               const Text('Transaction Log', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+               const SizedBox(height: 12),
+               ...logs.map((doc) {
+                 final data = doc.data() as Map<String, dynamic>;
+                 final double change = (data['changeAmount'] ?? 0).toDouble();
+                 final bool isPositive = change > 0;
+                 final date = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+                 final reason = data['reason'] ?? 'Manual Update';
+                 
+                 return Container(
+                   margin: const EdgeInsets.only(bottom: 12),
+                   decoration: BoxDecoration(
+                     color: Colors.white,
+                     borderRadius: BorderRadius.circular(12),
+                     boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0,2))],
+                   ),
+                   child: ListTile(
+                     leading: CircleAvatar(
+                       backgroundColor: isPositive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                       child: Icon(
+                         isPositive ? Icons.arrow_downward : Icons.arrow_upward,
+                         color: isPositive ? Colors.green : Colors.red,
+                         size: 20,
+                       ),
+                     ),
+                     title: Text(reason, style: const TextStyle(fontWeight: FontWeight.w600)),
+                     subtitle: Text(DateFormat('MMM d, y • h:mm a').format(date)),
+                     trailing: Text(
+                       '${isPositive ? '+' : ''}$change ${material.unit}',
+                       style: TextStyle(
+                         color: isPositive ? Colors.green : Colors.red,
+                         fontWeight: FontWeight.bold,
+                         fontSize: 16,
+                       ),
+                     ),
+                   ),
+                 );
+               }),
+               const SizedBox(height: 80), // Fab space
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeaderCard(RawMaterialModel displayMaterial) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: AppTheme.mainGradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(displayMaterial.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text('${displayMaterial.storageLocation} • ${displayMaterial.supplierName}', style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Current Stock', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('${displayMaterial.currentStock} ${displayMaterial.unit}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              Container(
+                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                 decoration: BoxDecoration(
+                   color: Colors.white.withValues(alpha: 0.2),
+                   borderRadius: BorderRadius.circular(20),
+                 ),
+                 child: const Text('Live Updates', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: _buildHeaderCard(material),
+        ),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.history, size: 60, color: Colors.grey[300]),
+                const SizedBox(height: 16),
+                Text('No history records found', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showRestockDialog(BuildContext context) {
+    final qtyCtrl = TextEditingController();
+    final costCtrl = TextEditingController(text: material.costPerUnit.toString());
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Receiving Supply'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Header Card
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Current Stock', style: TextStyle(color: Colors.grey[600])),
-                            Text('${material.currentStock} ${material.unit}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primary)),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                             Text('Storage Location', style: TextStyle(color: Colors.grey[600])),
-                             Text(material.storageLocation, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        )
-                      ],
-                    ),
-                    const Divider(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Supplier: ${material.supplierName}'),
-                        Text('Cost: ₹${material.costPerUnit}/${material.unit}'),
-                      ],
-                    )
-                  ],
-                ),
+            const Text('Add new stock to inventory.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: qtyCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Quantity Received (${material.unit})', 
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.add_shopping_cart),
               ),
+              autofocus: true,
             ),
-            
-            const SizedBox(height: 24),
-            const Text('Supply Log (Inward)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.arrow_downward, color: Colors.white, size: 16)),
-                title: const Text('Initial / Last Supply Received'),
-                subtitle: Text('Added on ${DateFormat.yMMMd().format(material.assignedDate)}'),
-                trailing: Text('+${material.currentStock} ${material.unit}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)), // Simple estimation
+            const SizedBox(height: 12),
+            TextField(
+              controller: costCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Updated Cost (Optional)', 
+                border: OutlineInputBorder(),
+                prefixText: '₹ ',
               ),
-            ),
-
-            const SizedBox(height: 24),
-            const Text('Usage History (Outward)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            
-            // We need to query assignments where this material was used.
-            // Since Firestore query inside array of objects is tricky without specific index or structure,
-            // we will fetch assignments and filter client-side for this MVP or use a dedicated collection if scaled.
-            // For now: Fetch all assignments (or recent ones) and filter.
-            StreamBuilder<List<AssignmentModel>>(
-              stream: db.getAssignments(), // Ideally pass a filter/limit
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                final assignments = snapshot.data ?? [];
-                
-                // Filter where materialsUsed contains this material ID
-                final usage = assignments.where((a) {
-                  return a.materialsUsed.any((m) => m['materialId'] == material.id || m['name'] == material.name);
-                }).toList();
-
-                if (usage.isEmpty) {
-                  return const Card(child: Padding(padding: EdgeInsets.all(16), child: Center(child: Text('No usage recorded yet.'))));
-                }
-
-                // Sort by date desc
-                usage.sort((a, b) => b.assignedAt.compareTo(a.assignedAt));
-
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: usage.length,
-                  itemBuilder: (context, index) {
-                    final task = usage[index];
-                    // Find the specific usage entry
-                    final matEntry = task.materialsUsed.firstWhere((m) => m['materialId'] == material.id || m['name'] == material.name, orElse: () => {});
-                    final qty = matEntry['quantity'] ?? '0';
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: const CircleAvatar(backgroundColor: Colors.red, child: Icon(Icons.arrow_upward, color: Colors.white, size: 16)),
-                        title: Text('Used in ${task.type}'),
-                        subtitle: Text('Batch: ${task.batchId} • ${DateFormat.yMMMd().format(task.assignedAt)}'),
-                        trailing: Text('-$qty ${material.unit}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                      ),
-                    );
-                  },
-                );
-              },
             ),
           ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
+            onPressed: () async {
+              final qty = double.tryParse(qtyCtrl.text);
+              if (qty == null || qty <= 0) return;
+              
+              Navigator.pop(context);
+              
+              try {
+                final db = FirebaseFirestore.instance;
+                final ref = db.collection('raw_materials').doc(material.id);
+                
+                await db.runTransaction((transaction) async {
+                   final snap = await transaction.get(ref);
+                   if (!snap.exists) return;
+                   
+                   final current = (snap.get('currentStock') ?? 0).toDouble();
+                   final newStock = current + qty;
+                   final newCost = double.tryParse(costCtrl.text) ?? material.costPerUnit;
+
+                   transaction.update(ref, {
+                     'currentStock': newStock,
+                     'costPerUnit': newCost,
+                   });
+                   
+                   final historyRef = ref.collection('history').doc();
+                   transaction.set(historyRef, {
+                      'date': DateTime.now(),
+                      'changeAmount': qty,
+                      'reason': 'Stock Inward / Supply',
+                      'newStock': newStock,
+                      'isAddition': true,
+                   });
+                });
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock Updated Successfully')));
+                  Navigator.pop(context); // Go back to list to refresh stock or stay? Stay is better but model needs update.
+                  // Since we passed 'material' model, it won't update in this view unless we re-fetch or pop.
+                  // We'll pop to refresh the previous screen.
+                }
+
+              } catch (e) {
+                 debugPrint('Error : $e');
+              }
+            }, 
+            child: const Text('Confirm Received'),
+          ),
+        ],
       ),
     );
   }
