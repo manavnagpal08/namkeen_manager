@@ -86,6 +86,8 @@ class StockService {
     await _db.collection('warehouse_stock').add(stock.toMap());
     
     // Here we could also deduct from "Loose Batch Stock" if we were tracking that separately.
+  }
+
   // 3. Forecast Stock Days Remaining
   Future<List<Map<String, dynamic>>> getStockForecast() async {
     final now = DateTime.now();

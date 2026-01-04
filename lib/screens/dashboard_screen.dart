@@ -138,18 +138,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   isSelected: _selectedIndex == 7, 
                   onTap: () => setState(() {
                     _selectedIndex = 7;
-                    _currentScreen = const CustomerListScreen();
+                    _currentDesktopPage = const CustomerListScreen();
                   }),
                 ),
-                _SidebarItem(
-                  icon: Icons.people, 
-                  label: 'Customers', 
-                  isSelected: _selectedIndex == 7, 
-                  onTap: () => setState(() {
-                    _selectedIndex = 7;
-                    _currentScreen = const CustomerListScreen();
-                  }),
-                ),
+
                 const Spacer(),
                     const CircleAvatar(backgroundColor: AppTheme.primary, child: Icon(Icons.person, color: Colors.white)),
                   ],
@@ -778,6 +770,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: const Text('Confirm Completion'),
           ),
         ],
+      ),
+    );
+  }
+}
+class _SidebarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primary.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? AppTheme.primary : Colors.grey, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppTheme.primary : Colors.grey,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
