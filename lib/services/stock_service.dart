@@ -11,10 +11,53 @@ class StockService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // 1. Deduct Raw Materials when Batch Starts
-  Future<void> deductRawMaterialsForBatch(BatchModel batch, {double? actualProducedKg}) async {
-    debugPrint('Starting deduction for batch: ${batch.batchCode}, Product: ${batch.productId}');
+  // 1. Deduct Raw Materials when Batch Starts (or Completes)
+  Future<void> deductRawMaterialsForBatch(BatchModel batch, {double? actualProducedKg, List<Map<String, dynamic>>? usedMaterials}) async {
+    debugPrint('Starting deduction for batch: ${batch.batchCode}');
     
-    // Get recipe
+    // Strategy: If specific materials were assigned (Manual or Recipe-based at assignment time), use those.
+    // Otherwise, fetch the current recipe as a fallback.
+    
+    if (usedMaterials != null && usedMaterials.isNotEmpty) {
+      debugPrint('Using specific materials from assignment task.');
+      await _db.runTransaction((transaction) async {
+        for (var item in usedMaterials) {
+           final String? matId = item['materialId'];
+           if (matId == null) continue;
+           
+           // Handle quantity (might be String or num)
+           final double deduction = double.tryParse(item['quantity'].toString()) ?? 0;
+           if (deduction <= 0) continue;
+
+           final materialRef = _db.collection('raw_materials').doc(matId);
+           final snapshot = await transaction.get(materialRef);
+           
+           if (snapshot.exists) {
+             double currentStock = (snapshot.get('currentStock') ?? 0).toDouble();
+             debugPrint('Deducting $deduction from $matId (Current: $currentStock)');
+             
+             transaction.update(materialRef, {'currentStock': currentStock - deduction});
+             
+             // Add history log
+             final historyRef = _db.collection('raw_materials').doc(matId).collection('history').doc();
+             transaction.set(historyRef, {
+               'date': DateTime.now(),
+               'changeAmount': -deduction,
+               'reason': 'Production Batch ${batch.batchCode}',
+               'newStock': currentStock - deduction,
+               'isAddition': false,
+             });
+           } else {
+              debugPrint('Material $matId not found in DB');
+           }
+        }
+      });
+      return; // Done
+    }
+
+    // --- Fallback to Recipe if no materials provided ---
+    debugPrint('No assigned materials found. Falling back to Recipe lookup.');
+    
     final recipeSnap = await _db.collection('recipes')
         .where('product_id', isEqualTo: batch.productId)
         .limit(1).get();
@@ -28,15 +71,12 @@ class StockService {
     debugPrint('Found Recipe: ${recipe.name}');
     
     // Calculate Multiplier
-    // Recipe is based on 'batchBaseQuantityKg' (e.g. 100kg)
-    // We produced 'actualProducedKg' or planned 'targetQuantityKg'
     final productionQty = actualProducedKg ?? batch.targetQuantityKg;
     final baseQty = recipe.batchBaseQuantityKg > 0 ? recipe.batchBaseQuantityKg : 1.0;
-    
     final multiplier = productionQty / baseQty; 
+    
     debugPrint('Production Qty: $productionQty, Base Qty: $baseQty, Multiplier: $multiplier');
     
-    // Transactional update
     await _db.runTransaction((transaction) async {
       for (var ingredient in recipe.ingredients) {
          final materialRef = _db.collection('raw_materials').doc(ingredient.rawMaterialId);
@@ -48,17 +88,14 @@ class StockService {
            
            transaction.update(materialRef, {'currentStock': currentStock - deduction});
            
-           // Optional: Add history log
            final historyRef = _db.collection('raw_materials').doc(ingredient.rawMaterialId).collection('history').doc();
            transaction.set(historyRef, {
              'date': DateTime.now(),
              'changeAmount': -deduction,
-             'reason': 'Production Batch ${batch.batchCode}',
+             'reason': 'Production Batch ${batch.batchCode} (Auto-Recipe)',
              'newStock': currentStock - deduction,
              'isAddition': false,
            });
-         } else {
-            debugPrint('Material ${ingredient.rawMaterialId} not found in DB');
          }
       }
     });

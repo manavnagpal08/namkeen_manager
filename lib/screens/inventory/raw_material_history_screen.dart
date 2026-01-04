@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/raw_material_model.dart';
+import '../../models/assignment_model.dart';
 // import '../../core/glass_container.dart'; // Removing unused import
 
 class RawMaterialHistoryScreen extends StatelessWidget {
@@ -98,6 +99,43 @@ class RawMaterialHistoryScreen extends StatelessWidget {
                    ),
                  );
                }), 
+
+               // Legacy Usage Section
+               const SizedBox(height: 24),
+               const Divider(),
+               const Text('Legacy Usage (Pre-Automation)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+               const SizedBox(height: 12),
+               StreamBuilder<QuerySnapshot>(
+                 stream: FirebaseFirestore.instance.collection('assignments').snapshots(),
+                 builder: (context, assignmentSnap) {
+                    if (!assignmentSnap.hasData) return const Center(child: CircularProgressIndicator());
+                    final allAssignments = assignmentSnap.data!.docs.map((d) => AssignmentModel.fromMap(d.id, d.data() as Map<String, dynamic>)).toList();
+                    
+                    // Filter
+                    final usage = allAssignments.where((a) {
+                       return a.materialsUsed.any((m) => m['materialId'] == material.id || m['name'] == material.name);
+                    }).toList();
+                    usage.sort((a, b) => b.assignedAt.compareTo(a.assignedAt));
+
+                    if (usage.isEmpty) return const SizedBox.shrink(); // Hide if empty so we don't clutter
+
+                    return Column(
+                      children: usage.map((task) {
+                        final matEntry = task.materialsUsed.firstWhere((m) => m['materialId'] == material.id || m['name'] == material.name, orElse: () => {});
+                        final qty = matEntry['quantity'] ?? '0';
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: CircleAvatar(backgroundColor: Colors.orange.withValues(alpha: 0.2), child: const Icon(Icons.history, color: Colors.orange, size: 16)),
+                            title: Text('Used in ${task.type}'),
+                            subtitle: Text('Batch: ${task.batchId} • ${DateFormat.yMMMd().format(task.assignedAt)}'),
+                            trailing: Text('-$qty ${material.unit}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                 },
+               ),
                const SizedBox(height: 80), // Fab space
             ],
           );

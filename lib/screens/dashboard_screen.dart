@@ -738,7 +738,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                        }
                        // Deduct raw materials
                        final stockService = StockService();
-                       await stockService.deductRawMaterialsForBatch(batch, actualProducedKg: task.completedUnits);
+                       await stockService.deductRawMaterialsForBatch(batch, actualProducedKg: task.completedUnits, usedMaterials: task.materialsUsed);
                     }
                 } else if (task.type == 'Packaging') {
                     // Update Stock
