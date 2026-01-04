@@ -268,11 +268,11 @@ class DatabaseService {
 
   // Calculate total available packets for a product from warehouse
   Future<double> getAvailableStockPackets(String productId) async {
-    final snap = await _warehouseStock.where('product_id', isEqualTo: productId).get();
+    final snap = await _warehouseStock.where('productId', isEqualTo: productId).get();
     double total = 0;
     for (var doc in snap.docs) {
       final data = doc.data() as Map<String, dynamic>;
-      total += (data['quantity_packets'] ?? 0).toDouble();
+      total += (data['quantityPackets'] ?? 0).toDouble();
     }
     return total;
   }
@@ -281,9 +281,9 @@ class DatabaseService {
   Future<void> deductWarehouseStock(String productId, double quantityToDeduct) async {
     // strict FIFO: Get oldest entries with available stock
     final snap = await _warehouseStock
-        .where('product_id', isEqualTo: productId)
-        .where('quantity_packets', isGreaterThan: 0)
-        .orderBy('quantity_packets') // Optimization? No, ideally orderBy Date.
+        .where('productId', isEqualTo: productId)
+        .where('quantityPackets', isGreaterThan: 0)
+        .orderBy('quantityPackets') // Optimization? No, ideally orderBy Date.
         // orderBy('updatedAt') // Requires composite index usually.
         .get();
     
@@ -292,8 +292,8 @@ class DatabaseService {
     docs.sort((a, b) {
        final dataA = a.data() as Map<String, dynamic>;
        final dataB = b.data() as Map<String, dynamic>;
-       final dtA = (dataA['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(); // Safe cast
-       final dtB = (dataB['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+       final dtA = DateTime.tryParse(dataA['updatedAt'] ?? '') ?? DateTime.now();
+       final dtB = DateTime.tryParse(dataB['updatedAt'] ?? '') ?? DateTime.now();
        return dtA.compareTo(dtB);
     });
 
@@ -303,13 +303,13 @@ class DatabaseService {
     for (var doc in docs) {
       if (remaining <= 0) break;
       final params = doc.data() as Map<String, dynamic>;
-      double current = (params['quantity_packets'] ?? 0).toDouble();
+      double current = (params['quantityPackets'] ?? 0).toDouble();
       
       if (current >= remaining) {
-        batch.update(doc.reference, {'quantity_packets': current - remaining});
+        batch.update(doc.reference, {'quantityPackets': current - remaining});
         remaining = 0;
       } else {
-        batch.update(doc.reference, {'quantity_packets': 0});
+        batch.update(doc.reference, {'quantityPackets': 0});
         remaining -= current;
       }
     }
