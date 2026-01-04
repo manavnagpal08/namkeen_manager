@@ -66,7 +66,7 @@ class PrintingService {
       
       for (var item in order.items) {
          bytes += generator.row([
-           PosColumn(text: '${item.productId} (${item.sizeId})', width: 6),
+           PosColumn(text: item.productName, width: 6),
            PosColumn(text: '${item.quantity.toInt()}', width: 2),
            PosColumn(text: '${item.price}', width: 4, styles: PosStyles(align: PosAlign.right)),
          ]);

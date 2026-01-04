@@ -13,6 +13,7 @@ import '../models/warehouse_stock_model.dart';
 import '../models/dispatch_transfer_models.dart';
 import '../models/department_account_model.dart';
 import '../models/company_settings_model.dart';
+import '../models/customer_model.dart';
 
 class DatabaseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -332,6 +333,13 @@ class DatabaseService {
     await _ordersRef.add(order.toMap());
   }
 
+  // --- Orders ---
+  Stream<List<OrderModel>> getOrdersStream() {
+    return _ordersRef.orderBy('date', descending: true).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => OrderModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)).toList();
+    });
+  }
+
   // --- Dispatch ---
   Stream<List<DispatchModel>> getDispatchLogs() {
     return _dispatchRef.orderBy('dispatch_date', descending: true).snapshots().map((snapshot) {
@@ -352,6 +360,63 @@ class DatabaseService {
 
   Future<void> addTransfer(TransferModel transfer) async {
     await _transferRef.add(transfer.toMap());
+  }
+
+  CollectionReference get _customersRef => _db.collection('customers');
+  CollectionReference get _paymentsRef => _db.collection('customer_payments');
+
+  // --- Customers ---
+  Stream<List<CustomerModel>> getCustomers() {
+    return _customersRef.orderBy('name').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => CustomerModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)).toList();
+    });
+  }
+
+  Future<void> addCustomer(CustomerModel customer) async {
+    await _customersRef.add(customer.toMap());
+  }
+
+  Future<void> updateCustomer(CustomerModel customer) async {
+    await _customersRef.doc(customer.id).update(customer.toMap());
+  }
+
+  Future<void> updateCustomerDebt(String customerId, double amountChange) async {
+    await _customersRef.doc(customerId).update({
+      'totalDue': FieldValue.increment(amountChange),
+      'lastTransactionDate': DateTime.now(),
+    });
+  }
+
+  // --- Customer Payments ---
+  Stream<List<CustomerPaymentModel>> getCustomerPayments(String customerId) {
+    return _paymentsRef
+        .where('customerId', isEqualTo: customerId)
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => CustomerPaymentModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)).toList();
+    });
+  }
+
+  Future<void> addPayment(CustomerPaymentModel payment) async {
+    final batch = _db.batch();
+    
+    // 1. Add Payment Record
+    final newPaymentRef = _paymentsRef.doc();
+    batch.set(newPaymentRef, payment.toMap());
+
+    // 2. Update Customer Balance
+    // If 'Credit' (Order), Debt Increases (+ amount)
+    // If 'Debit' (Payment Received), Debt Decreases (- amount)
+    double change = payment.type == 'Credit' ? payment.amount : -payment.amount;
+    
+    final customerRef = _customersRef.doc(payment.customerId);
+    batch.update(customerRef, {
+      'totalDue': FieldValue.increment(change),
+      'lastTransactionDate': payment.date,
+    });
+
+    await batch.commit();
   }
 
   // --- Department Accounts ---

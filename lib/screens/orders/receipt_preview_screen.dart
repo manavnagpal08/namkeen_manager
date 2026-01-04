@@ -59,7 +59,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
-                            Expanded(child: Text('${item.productId} (Size: ${item.sizeId})')), // Ideally resolve names
+                            Expanded(child: Text('${item.productName} (${item.sizeName})')),
                             Text('${item.quantity.toInt()} x ', style: const TextStyle(color: Colors.grey)),
                             Text('Rs.${item.price}', style: const TextStyle(fontWeight: FontWeight.bold)),
                           ],

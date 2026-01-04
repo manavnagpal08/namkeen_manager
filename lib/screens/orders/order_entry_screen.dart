@@ -8,6 +8,7 @@ import '../../models/company_settings_model.dart'; // Added missing import
 import '../../models/category_model.dart'; // Added
 import '../../services/database_service.dart';
 import 'receipt_preview_screen.dart';
+import '../../models/customer_model.dart';
 
 class OrderEntryScreen extends StatefulWidget {
   const OrderEntryScreen({super.key});
@@ -27,6 +28,7 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
 
   String _searchQuery = '';
   String? _selectedCategory; // Added
+  CustomerModel? _selectedCustomer; // Added
   double _currentGstRate = 12.0;
 
   @override
@@ -249,16 +251,60 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Customer Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Customer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                            if (_selectedCustomer != null)
+                              Text('Due: ₹${_selectedCustomer!.totalDue.toStringAsFixed(0)}', style: TextStyle(color: _selectedCustomer!.totalDue > 0 ? Colors.red : Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
                         const SizedBox(height: 8),
-                        TextField(
-                          controller: _customerCtrl,
-                          decoration: InputDecoration(
-                            hintText: 'Customer Name / Mobile',
-                            prefixIcon: const Icon(Icons.person_outline, size: 20),
-                            isDense: true,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
+                        StreamBuilder<List<CustomerModel>>(
+                          stream: db.getCustomers(),
+                          builder: (context, snapshot) {
+                            final customers = snapshot.data ?? [];
+                            
+                            return Autocomplete<CustomerModel>(
+                              optionsBuilder: (TextEditingValue textEditingValue) {
+                                if (textEditingValue.text.isEmpty) {
+                                  return const Iterable<CustomerModel>.empty();
+                                }
+                                return customers.where((CustomerModel option) {
+                                  return option.name.toLowerCase().contains(textEditingValue.text.toLowerCase()) || 
+                                         option.phone.contains(textEditingValue.text);
+                                });
+                              },
+                              displayStringForOption: (CustomerModel option) => option.name,
+                              onSelected: (CustomerModel selection) {
+                                setState(() {
+                                  _selectedCustomer = selection;
+                                  _customerCtrl.text = selection.name; // Keep text sync
+                                });
+                              },
+                              fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                                // Initialize controller if selected
+                                if (_selectedCustomer != null && textEditingController.text.isEmpty) {
+                                  textEditingController.text = _selectedCustomer!.name;
+                                }
+                                return TextField(
+                                  controller: textEditingController,
+                                  focusNode: focusNode,
+                                  decoration: InputDecoration(
+                                    hintText: 'Search Customer...',
+                                    prefixIcon: const Icon(Icons.person_outline, size: 20),
+                                    isDense: true,
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                    suffixIcon: _selectedCustomer != null 
+                                      ? IconButton(icon: const Icon(Icons.clear), onPressed: () {
+                                          setState(() { _selectedCustomer = null; textEditingController.clear(); });
+                                        }) 
+                                      : null
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -434,7 +480,14 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
               }
 
               setState(() {
-                _cart.add(OrderItem(productId: product.id, sizeId: sizeId, quantity: qty, price: price));
+                _cart.add(OrderItem(
+                  productId: product.id, 
+                  productName: product.name,
+                  sizeId: sizeId, 
+                  sizeName: sizeId, // Using ID as name for now until we fetch size map
+                  quantity: qty, 
+                  price: price
+                ));
                 _calculateTotal();
               });
               Navigator.pop(context);
@@ -480,16 +533,32 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
   
       final order = OrderModel(
         id: '',
-        customerName: _customerCtrl.text.isEmpty ? 'Walk-in' : _customerCtrl.text,
+        customerName: _selectedCustomer?.name ?? (_customerCtrl.text.isEmpty ? 'Walk-in' : _customerCtrl.text),
         date: DateTime.now(),
         totalAmount: _totalAmount,
         items: _cart,
-        status: 'Paid', 
+        status: _selectedCustomer != null ? 'Credit' : 'Paid', // Credit if linked to customer
         gstPercentage: _applyGst ? currentGstRate : 0.0,
         gstAmount: _gstAmount,
       );
   
       await db.addOrder(order);
+
+      // If Customer -> Add to Ledger (Debt)
+      if (_selectedCustomer != null) {
+         // Create a synthetic "Order" transaction in ledger
+         // We can use the payment model for this, where 'Credit' = Debt Increase
+         final ledgerEntry = CustomerPaymentModel(
+            id: '', 
+            customerId: _selectedCustomer!.id, 
+            amount: _totalAmount, 
+            type: 'Credit', // Increases Debt
+            date: DateTime.now(), 
+            notes: 'Order via POS',
+            orderId: 'REF-LAST' // Ideally we get ID from addOrder return
+         );
+         await db.addPayment(ledgerEntry);
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order Saved & Stock Deducted!')));

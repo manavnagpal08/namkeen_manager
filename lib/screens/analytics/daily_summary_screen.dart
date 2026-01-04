@@ -98,24 +98,132 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
                       return d.year == _selectedDate.year && d.month == _selectedDate.month && d.day == _selectedDate.day;
                     }).toList();
 
-                    return ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        _buildSummaryStats(dailyTasks),
-                        const SizedBox(height: 24),
-                        _buildSectionHeader('Manufacturing Tasks', Colors.orange),
-                        const SizedBox(height: 8),
-                        _buildTaskList(dailyTasks.where((t) => t.type == 'Manufacturing').toList(), Colors.orange, batchMap),
-                        const SizedBox(height: 24),
-                        _buildSectionHeader('Packaging Tasks', Colors.blue),
-                        const SizedBox(height: 8),
-                         _buildTaskList(dailyTasks.where((t) => t.type == 'Packaging').toList(), Colors.blue, batchMap),
-                      ],
+                    return StreamBuilder<List<OrderModel>>(
+                      stream: db.getOrdersStream(),
+                      builder: (context, orderSnap) {
+                        final orders = orderSnap.data ?? [];
+
+                        return ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            _buildSalesAnalysis(orders), // New Analytics Section
+                            const SizedBox(height: 24),
+                            _buildSummaryStats(dailyTasks),
+                            const SizedBox(height: 24),
+                            _buildSectionHeader('Manufacturing Tasks', Colors.orange),
+                            const SizedBox(height: 8),
+                            _buildTaskList(dailyTasks.where((t) => t.type == 'Manufacturing').toList(), Colors.orange, batchMap),
+                            const SizedBox(height: 24),
+                            _buildSectionHeader('Packaging Tasks', Colors.blue),
+                            const SizedBox(height: 8),
+                             _buildTaskList(dailyTasks.where((t) => t.type == 'Packaging').toList(), Colors.blue, batchMap),
+                          ],
+                        );
+                      }
                     );
                   },
                 );
               }
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesAnalysis(List<OrderModel> allOrders) {
+    if (allOrders.isEmpty) return const SizedBox.shrink();
+
+    // 1. Filter Last 30 Days
+    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    final recentOrders = allOrders.where((o) => o.date.isAfter(cutoff)).toList();
+
+    if (recentOrders.isEmpty) return const SizedBox.shrink();
+
+    // 2. Aggregate Sales
+    final salesMap = <String, double>{};
+    for (var order in recentOrders) {
+      for (var item in order.items) {
+        // Use name if available, else ID
+        final key = item.productName.isNotEmpty ? item.productName : item.productId;
+        salesMap[key] = (salesMap[key] ?? 0) + item.quantity;
+      }
+    }
+
+    // 3. Sort
+    final sortedEntries = salesMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value)); // Descending
+
+    if (sortedEntries.isEmpty) return const SizedBox.shrink();
+
+    final top5 = sortedEntries.take(5).toList();
+    final bottom5 = sortedEntries.length > 5 ? sortedEntries.reversed.take(5).toList() : <MapEntry<String, double>>[];
+    
+    // Max value for progress bar logic
+    final double maxVal = top5.isNotEmpty ? top5.first.value : 1;
+
+    return Column(
+      children: [
+        _buildSectionHeader('Sales Insights (Last 30 Days)', AppTheme.primary),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('🔥 Top 5 Best Sellers', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
+              ...top5.map((e) => _buildSalesRow(e.key, e.value, maxVal, Colors.green)),
+              
+              if (bottom5.isNotEmpty) ...[
+                const Divider(height: 32),
+                const Text('📉 Slowest Moving Items', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                ...bottom5.map((e) => _buildSalesRow(e.key, e.value, maxVal, Colors.redAccent)),
+              ]
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSalesRow(String name, double value, double max, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
+          ),
+          Expanded(
+            flex: 3,
+            child: Stack(
+              children: [
+                Container(
+                  height: 8,
+                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(4)),
+                ),
+                FractionallySizedBox(
+                  widthFactor: (value / max).clamp(0.0, 1.0),
+                  child: Container(
+                    height: 8,
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(4)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 50,
+            child: Text('${value.toInt()} units', style: const TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.right),
           ),
         ],
       ),

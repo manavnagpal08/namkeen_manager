@@ -107,7 +107,84 @@ class InventoryScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
+                      // Forecast Section
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: StockService().getStockForecast(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+              
+              final criticalItems = snapshot.data!.where((i) => (i['daysLeft'] as int) < 7).toList();
+              if (criticalItems.isEmpty) return const SizedBox.shrink();
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('Stock Forecast Alert', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 100,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: criticalItems.length,
+                        separatorBuilder: (_,__) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final item = criticalItems[index];
+                          final int days = item['daysLeft'];
+                          final bool isCritical = days < 3;
+                          
+                          return Container(
+                            width: 140,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: isCritical ? Colors.red.shade200 : Colors.orange.shade200),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$days Days Left', 
+                                  style: TextStyle(
+                                    color: isCritical ? Colors.red : Colors.orange, 
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12
+                                  )
+                                ),
+                                Text(
+                                  'Usage: ${item['dailyUsage'].toStringAsFixed(1)} kg/day',
+                                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          
+          Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

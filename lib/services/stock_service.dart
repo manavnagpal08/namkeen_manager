@@ -4,6 +4,7 @@ import '../models/recipe_model.dart';
 import '../models/packing_unit_model.dart';
 import '../models/warehouse_stock_model.dart';
 import '../models/assignment_model.dart';
+import '../models/raw_material_model.dart';
 
 class StockService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -85,5 +86,73 @@ class StockService {
     await _db.collection('warehouse_stock').add(stock.toMap());
     
     // Here we could also deduct from "Loose Batch Stock" if we were tracking that separately.
+  // 3. Forecast Stock Days Remaining
+  Future<List<Map<String, dynamic>>> getStockForecast() async {
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+
+    // A. Fetch Data
+    final materialsSnap = await _db.collection('raw_materials').get();
+    final materials = materialsSnap.docs.map((d) => RawMaterialModel.fromMap(d.id, d.data())).toList();
+
+    // Fetch assignments is tricky without composite index on Date.
+    // We'll fetch all assignments and filter in memory (assuming not millions yet) or use batch approach.
+    // Better: Fetch 'batches' completed in last 30 days.
+    final batchesSnap = await _db.collection('batches')
+        .where('status', isEqualTo: 'Ready for Packing') // or Packaged
+        // .where('startTime', isGreaterThan: thirtyDaysAgo) // Needs index
+        .get();
+    
+    // In-memory filter for date if index fails
+    final validBatches = batchesSnap.docs
+        .map((d) => BatchModel.fromMap(d.id, d.data()))
+        .where((b) => b.startTime.isAfter(thirtyDaysAgo))
+        .toList();
+
+    final recipesSnap = await _db.collection('recipes').get();
+    final recipes = recipesSnap.docs.map((d) => RecipeModel.fromMap(d.id, d.data())).toList();
+
+    // B. Calculate Usage
+    final Map<String, double> usageMap = {}; // MaterialId -> Total Used
+
+    for (var batch in validBatches) {
+      final recipe = recipes.firstWhere((r) => r.productId == batch.productId, orElse: () => RecipeModel(id: '', productId: '', ingredients: [], batchBaseQuantityKg: 1));
+      if (recipe.id.isEmpty) continue;
+
+      // Approx usage based on target or actual?
+      // We'll use targetQuantityKg for simplicity of forecasting
+      final multiplier = batch.targetQuantityKg / (recipe.batchBaseQuantityKg > 0 ? recipe.batchBaseQuantityKg : 1);
+
+      for (var ing in recipe.ingredients) {
+        usageMap[ing.rawMaterialId] = (usageMap[ing.rawMaterialId] ?? 0) + (ing.quantityRequired * multiplier);
+      }
+    }
+
+    // C. Daily Rate & Days Left
+    final List<Map<String, dynamic>> forecast = [];
+
+    for (var mat in materials) {
+      final totalUsed30Days = usageMap[mat.id] ?? 0;
+      final dailyRate = totalUsed30Days / 30;
+      
+      int daysLeft = 999;
+      if (dailyRate > 0) {
+        daysLeft = (mat.currentStock / dailyRate).floor();
+      }
+
+      forecast.add({
+        'id': mat.id,
+        'name': mat.name,
+        'currentStock': mat.currentStock,
+        'dailyUsage': dailyRate,
+        'daysLeft': daysLeft,
+        'status': daysLeft < 3 ? 'Critical' : (daysLeft < 7 ? 'Low' : 'Good'),
+      });
+    }
+
+    // Sort by Days Left (Ascending)
+    forecast.sort((a, b) => (a['daysLeft'] as int).compareTo(b['daysLeft'] as int));
+    return forecast;
   }
 }
+

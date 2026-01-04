@@ -26,6 +26,7 @@ import 'settings/admin_settings_screen.dart';
 import 'settings/department_login_manager.dart';
 
 import 'analytics/daily_summary_screen.dart';
+import 'customers/customer_list_screen.dart';
 import '../models/assignment_model.dart'; 
 import '../core/responsive_layout.dart';
 
@@ -131,7 +132,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const Text('Desktop Dashboard', style: TextStyle(color: Colors.grey)),
                       ],
                     ),
-                    const Spacer(),
+                    _SidebarItem(
+                  icon: Icons.people, 
+                  label: 'Customers', 
+                  isSelected: _selectedIndex == 7, 
+                  onTap: () => setState(() {
+                    _selectedIndex = 7;
+                    _currentScreen = const CustomerListScreen();
+                  }),
+                ),
+                _SidebarItem(
+                  icon: Icons.people, 
+                  label: 'Customers', 
+                  isSelected: _selectedIndex == 7, 
+                  onTap: () => setState(() {
+                    _selectedIndex = 7;
+                    _currentScreen = const CustomerListScreen();
+                  }),
+                ),
+                const Spacer(),
                     const CircleAvatar(backgroundColor: AppTheme.primary, child: Icon(Icons.person, color: Colors.white)),
                   ],
                 ),
