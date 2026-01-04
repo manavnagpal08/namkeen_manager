@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/assignment_model.dart';
+import '../../models/batch_model.dart';
 import '../../services/database_service.dart';
 
 class DailySummaryScreen extends StatefulWidget {
@@ -18,8 +19,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<DatabaseService>(context);
-    final dateStr = DateFormat.yMMMMEEEEd().format(_selectedDate);
-
+    
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -79,34 +79,42 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
           ),
           
           Expanded(
-            child: StreamBuilder<List<AssignmentModel>>(
-              stream: db.getAssignments(),
-              builder: (context, assignSnap) {
-                if (assignSnap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                
-                final allAssignments = assignSnap.data ?? [];
-                // Filter by Date (Completed At matches selected date)
-                final dailyTasks = allAssignments.where((t) {
-                  if (t.status != 'Completed') return false;
-                  final d = t.completedAt ?? t.assignedAt; 
-                  return d.year == _selectedDate.year && d.month == _selectedDate.month && d.day == _selectedDate.day;
-                }).toList();
+            child: StreamBuilder<List<BatchModel>>(
+              stream: db.getBatches(),
+              builder: (context, batchSnap) {
+                final batches = batchSnap.data ?? [];
+                final batchMap = {for (var b in batches) b.id: b.batchCode};
 
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    _buildSummaryStats(dailyTasks),
-                    const SizedBox(height: 24),
-                    _buildSectionHeader('Manufacturing Tasks', Colors.orange),
-                    const SizedBox(height: 8),
-                    _buildTaskList(dailyTasks.where((t) => t.type == 'Manufacturing').toList(), Colors.orange),
-                    const SizedBox(height: 24),
-                    _buildSectionHeader('Packaging Tasks', Colors.blue),
-                    const SizedBox(height: 8),
-                     _buildTaskList(dailyTasks.where((t) => t.type == 'Packaging').toList(), Colors.blue),
-                  ],
+                return StreamBuilder<List<AssignmentModel>>(
+                  stream: db.getAssignments(),
+                  builder: (context, assignSnap) {
+                    if (assignSnap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                    
+                    final allAssignments = assignSnap.data ?? [];
+                    // Filter by Date (Completed At matches selected date)
+                    final dailyTasks = allAssignments.where((t) {
+                      if (t.status != 'Completed') return false;
+                      final d = t.completedAt ?? t.assignedAt; 
+                      return d.year == _selectedDate.year && d.month == _selectedDate.month && d.day == _selectedDate.day;
+                    }).toList();
+
+                    return ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        _buildSummaryStats(dailyTasks),
+                        const SizedBox(height: 24),
+                        _buildSectionHeader('Manufacturing Tasks', Colors.orange),
+                        const SizedBox(height: 8),
+                        _buildTaskList(dailyTasks.where((t) => t.type == 'Manufacturing').toList(), Colors.orange, batchMap),
+                        const SizedBox(height: 24),
+                        _buildSectionHeader('Packaging Tasks', Colors.blue),
+                        const SizedBox(height: 8),
+                         _buildTaskList(dailyTasks.where((t) => t.type == 'Packaging').toList(), Colors.blue, batchMap),
+                      ],
+                    );
+                  },
                 );
-              },
+              }
             ),
           ),
         ],
@@ -166,7 +174,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
     );
   }
 
-  Widget _buildTaskList(List<AssignmentModel> tasks, Color accentColor) {
+  Widget _buildTaskList(List<AssignmentModel> tasks, Color accentColor, Map<String, String> batchMap) {
     if (tasks.isEmpty) {
       return Center(
         child: Padding(
@@ -183,34 +191,41 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
       separatorBuilder: (_,__) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final task = tasks[index];
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              backgroundColor: accentColor.withValues(alpha: 0.1),
-              child: Icon(Icons.check, color: accentColor, size: 20), 
+        final bCode = batchMap[task.batchId] ?? task.batchId;
+
+        return InkWell(
+          onTap: () {
+             // Optional: Show Task Details
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-            title: Text('Batch #${task.batchId}', style: const TextStyle(fontWeight: FontWeight.bold)), 
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'Produced: ${task.completedUnits} ${(task.type=='Manufacturing'?'kg':'pkts')}\n'
-                '${task.completedAt != null ? DateFormat.jm().format(task.completedAt!) : ''}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: CircleAvatar(
+                backgroundColor: accentColor.withValues(alpha: 0.1),
+                child: Icon(Icons.check, color: accentColor, size: 20), 
               ),
-            ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+              title: Text('Batch: $bCode', style: const TextStyle(fontWeight: FontWeight.bold)), 
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Produced: ${task.completedUnits} ${(task.type=='Manufacturing'?'kg':'pkts')}\n'
+                  '${task.completedAt != null ? DateFormat.jm().format(task.completedAt!) : ''}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
               ),
-              child: const Text('Done', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text('Done', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+              ),
             ),
           ),
         );

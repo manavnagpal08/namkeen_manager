@@ -725,6 +725,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                        if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Manufacturing Done! Batch is now Ready for Packing.')));
                        }
+                       // Deduct raw materials
+                       final stockService = StockService();
+                       await stockService.deductRawMaterialsForBatch(batch, actualProducedKg: task.completedUnits);
                     }
                 } else if (task.type == 'Packaging') {
                     // Update Stock

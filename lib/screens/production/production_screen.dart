@@ -77,12 +77,16 @@ class ProductionScreen extends StatelessWidget {
                         tooltip: 'Print Report',
                         onPressed: () => _printReport(context, db, batch),
                       ),
-                      isActive 
-                        ? IconButton(
-                            icon: const Icon(Icons.check_circle, color: Colors.green), 
-                            onPressed: () => _completeBatch(context, db, batch),
-                          ) 
-                        : const Icon(Icons.check, color: Colors.grey),
+                      if (batch.status == 'In Progress')
+                        IconButton(
+                          icon: const Icon(Icons.check_circle, color: Colors.green), 
+                          tooltip: 'Complete Batch (Manual)',
+                          onPressed: () => _completeBatch(context, db, batch),
+                        )
+                      else if (batch.status == 'Ready for Packing')
+                         const Tooltip(message: 'Manufacturing Done. Assign Packing.', child: Padding(padding: EdgeInsets.all(8), child: Icon(Icons.inventory_2, color: Colors.orange))),
+                      if (batch.status == 'Completed')
+                        const Icon(Icons.check, color: Colors.grey),
                     ],
                   ),
                 ),
