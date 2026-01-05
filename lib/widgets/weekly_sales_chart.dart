@@ -34,12 +34,10 @@ class WeeklySalesChart extends StatelessWidget {
       if (value > maxY) maxY = value;
     });
 
-    return AspectRatio(
-      aspectRatio: 1.7,
-      child: BarChart(
-        BarChartData(
-          barTouchData: BarTouchData(
-            touchTooltipData: BarTouchTooltipData(
+    return BarChart(
+      BarChartData(
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
               // tooltipBgColor: Colors.blueGrey, // Removed deprecated property
               getTooltipColor: (_) => Colors.blueGrey, // Use this callback instead
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -91,7 +89,6 @@ class WeeklySalesChart extends StatelessWidget {
           }),
           gridData: const FlGridData(show: false),
         ),
-      ),
     );
   }
 }

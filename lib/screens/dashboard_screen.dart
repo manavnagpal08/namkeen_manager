@@ -588,7 +588,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                        ],
                      ),
                      const SizedBox(height: 20),
-                     WeeklySalesChart(orders: orders),
+                     const SizedBox(height: 20),
+                     SizedBox(
+                       height: 250, // Fixed height to keep it small
+                       child: WeeklySalesChart(orders: orders),
+                     ),
                    ],
                  ),
                );
