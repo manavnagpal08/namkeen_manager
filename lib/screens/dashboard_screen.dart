@@ -16,6 +16,7 @@ import 'product_management/manage_attributes_screen.dart';
 import 'inventory/inventory_screen.dart';
 import 'inventory/warehouse_screen.dart';
 import 'analytics/analytics_screen.dart';
+import 'package:namkeen_manager/screens/analytics/daily_summary_screen.dart';
 import 'product_management/product_list_screen.dart';
 import 'employees/employee_list_screen.dart';
 import 'production/production_screen.dart';
