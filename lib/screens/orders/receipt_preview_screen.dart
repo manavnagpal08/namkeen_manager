@@ -4,6 +4,7 @@ import '../../core/namkeen_theme.dart';
 import '../../models/order_model.dart';
 import '../../services/printing_service.dart';
 import '../../services/database_service.dart';
+import '../settings/printer_scan_screen.dart'; // Re-added for connection handling
 import '../../models/company_settings_model.dart';
 import 'package:provider/provider.dart';
 
@@ -114,8 +115,32 @@ class ReceiptPreviewScreen extends StatelessWidget {
                     icon: const Icon(Icons.print),
                     label: const Text('Print Thermal'),
                     onPressed: () async {
-                       // Optional: Check connection first or let service handle
-                       _printingService.printOrderThermal(order, settings);
+                       final status = await _printingService.printOrderThermal(order, settings);
+                       if (context.mounted) {
+                          if (status == "Printer not connected") {
+                             showDialog(
+                               context: context,
+                               builder: (ctx) => AlertDialog(
+                                 title: const Text('Printer Disconnected'),
+                                 content: const Text('No thermal printer connected. Configure now?'),
+                                 actions: [
+                                   TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                   ElevatedButton(
+                                     onPressed: () {
+                                       Navigator.pop(ctx);
+                                       Navigator.push(context, MaterialPageRoute(builder: (_) => const PrinterScanScreen()));
+                                     }, 
+                                     child: const Text('Connect Printer')
+                                   )
+                                 ],
+                               )
+                             );
+                          } else if (status.startsWith("Error")) {
+                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status), backgroundColor: Colors.red));
+                          } else {
+                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status), backgroundColor: Colors.green));
+                          }
+                       }
                     },
                   ),
                 ),

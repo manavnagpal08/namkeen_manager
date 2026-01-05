@@ -37,9 +37,13 @@ class PrintingService {
   }
 
   // Print Order (Thermal 58mm/80mm)
-  Future<void> printOrderThermal(OrderModel order, CompanySettingsModel settings) async {
-    bool isConnected = await PrintBluetoothThermal.connectionStatus;
-    if (isConnected) {
+  Future<String> printOrderThermal(OrderModel order, CompanySettingsModel settings) async {
+    try {
+      bool isConnected = await PrintBluetoothThermal.connectionStatus;
+      if (!isConnected) {
+        return "Printer not connected";
+      }
+
       final profile = await CapabilityProfile.load();
       // Use settings preference for paper size if available
       final paperSize = settings.useThermal80mm ? '80mm' : '58mm';
@@ -111,6 +115,9 @@ class PrintingService {
 
       // Send bytes
       await PrintBluetoothThermal.writeBytes(bytes);
+      return "Printed Successfully";
+    } catch (e) {
+      return "Error printing: $e";
     }
   }
 
