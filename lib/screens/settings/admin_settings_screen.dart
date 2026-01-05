@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/company_settings_model.dart';
 import '../../services/database_service.dart';
@@ -25,6 +27,22 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   
   bool _useThermal80mm = true;
   bool _preferA4 = false;
+  bool _showLogo = true;
+  String? _logoBase64;
+  bool _dataLoaded = false;
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image != null) {
+       final bytes = await image.readAsBytes();
+       final String base64String = base64Encode(bytes);
+       setState(() {
+         _logoBase64 = base64String;
+       });
+    }
+  }
   
   // Existing data
   CompanySettingsModel? _currentSettings;
@@ -61,6 +79,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       _gstRateCtrl.text = settings.gstRate.toString();
       _useThermal80mm = settings.useThermal80mm;
       _preferA4 = settings.preferA4;
+      _showLogo = settings.showLogo; // Initialized from settings
+      _logoBase64 = settings.logoBase64; // Initialized from settings
       _isLoading = false;
     });
   }
@@ -111,6 +131,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 onChanged: (val) => setState(() => _useThermal80mm = val),
               ),
               
+  // ... 
+
               const SizedBox(height: 24),
               _buildSectionHeader('Support & Branding'),
               Card(
@@ -124,6 +146,39 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                        SelectableText('Manav Nagpal: +91 9896817707\nEmail: manav.nagpal2005@gmail.com', textAlign: TextAlign.center),
                        const SizedBox(height: 8),
                        const Text('Powered by FLIP CLIP', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+                       
+                       const Divider(),
+                       SwitchListTile(
+                         title: const Text('Show Logo on Invoice'),
+                         value: _showLogo,
+                         onChanged: (v) => setState(() => _showLogo = v),
+                       ),
+                       if (_showLogo) ...[
+                         const SizedBox(height: 8),
+                         Center(
+                           child: _logoBase64 != null 
+                             ? Image.memory(base64Decode(_logoBase64!), height: 80)
+                             : Image.asset('assets/images/logo.png', height: 80, errorBuilder: (c,e,s) => const Icon(Icons.image_not_supported, size: 50)),
+                         ),
+                         const SizedBox(height: 8),
+                         Row(
+                           mainAxisAlignment: MainAxisAlignment.center,
+                           children: [
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.upload),
+                                label: const Text('Upload Logo'),
+                                onPressed: _pickImage,
+                              ),
+                              if (_logoBase64 != null) ...[
+                                const SizedBox(width: 8),
+                                 TextButton(
+                                   onPressed: () => setState(() => _logoBase64 = null),
+                                   child: const Text('Reset to Default'),
+                                 )
+                              ]
+                           ]
+                         ),
+                       ],
                     ],
                   ),
                 ),
@@ -197,6 +252,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       useThermal80mm: _useThermal80mm,
       preferA4: _preferA4,
       gstRate: double.tryParse(_gstRateCtrl.text) ?? 12.0,
+      showLogo: _showLogo, // Added
+      logoBase64: _logoBase64, // Added
     );
 
     try {

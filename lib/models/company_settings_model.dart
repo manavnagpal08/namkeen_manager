@@ -7,9 +7,8 @@ class CompanySettingsModel {
   final String logoUrl;
   final String footerMessage;
   final String termsAndConditions;
-  final bool useThermal80mm; // false = 58mm, true = 80mm
-  final bool preferA4;
-  final double gstRate; // Added GST Rate
+  final bool showLogo;
+  final String? logoBase64;
 
   CompanySettingsModel({
     required this.id,
@@ -23,6 +22,8 @@ class CompanySettingsModel {
     this.useThermal80mm = true,
     this.preferA4 = false,
     this.gstRate = 12.0,
+    this.showLogo = true,
+    this.logoBase64,
   });
 
   factory CompanySettingsModel.fromMap(String id, Map<String, dynamic> data) {
@@ -38,6 +39,8 @@ class CompanySettingsModel {
       useThermal80mm: data['use_thermal_80mm'] ?? true,
       preferA4: data['prefer_a4'] ?? false,
       gstRate: (data['gst_rate'] ?? 12.0).toDouble(),
+      showLogo: data['show_logo'] ?? true,
+      logoBase64: data['logo_base64'],
     );
   }
 
@@ -53,6 +56,8 @@ class CompanySettingsModel {
       'use_thermal_80mm': useThermal80mm,
       'prefer_a4': preferA4,
       'gst_rate': gstRate,
+      'show_logo': showLogo,
+      'logo_base64': logoBase64,
     };
   }
   
@@ -68,6 +73,7 @@ class CompanySettingsModel {
       footerMessage: 'Quality is our priority.',
       termsAndConditions: 'Goods once sold will not be taken back.',
       gstRate: 12.0,
+      showLogo: true,
     );
   }
   
@@ -82,6 +88,8 @@ class CompanySettingsModel {
     bool? useThermal80mm,
     bool? preferA4,
     double? gstRate,
+    bool? showLogo,
+    String? logoBase64,
   }) {
     return CompanySettingsModel(
       id: id,
@@ -95,6 +103,8 @@ class CompanySettingsModel {
       useThermal80mm: useThermal80mm ?? this.useThermal80mm,
       preferA4: preferA4 ?? this.preferA4,
       gstRate: gstRate ?? this.gstRate,
+      showLogo: showLogo ?? this.showLogo,
+      logoBase64: logoBase64 ?? this.logoBase64,
     );
   }
 }
