@@ -337,6 +337,10 @@ class DatabaseService {
     await _ordersRef.add(order.toMap());
   }
 
+  Future<void> updateOrderPaymentStatus(String orderId, String paymentStatus) async {
+    await _ordersRef.doc(orderId).update({'payment_status': paymentStatus});
+  }
+
   // --- Orders ---
   Stream<List<OrderModel>> getOrdersStream() {
     return _ordersRef.orderBy('date', descending: true).snapshots().map((snapshot) {

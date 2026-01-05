@@ -5,6 +5,7 @@ import '../../core/namkeen_theme.dart';
 import '../../models/order_model.dart';
 import '../../services/database_service.dart';
 import 'receipt_preview_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -80,18 +81,57 @@ class _OrderListScreenState extends State<OrderListScreen> {
                             DataCell(Text('#${order.id.length > 4 ? order.id.substring(0, 4).toUpperCase() : order.id}', style: const TextStyle(fontWeight: FontWeight.w500, fontFamily: 'monospace'))),
                             DataCell(Text(order.customerName, style: const TextStyle(fontWeight: FontWeight.w500))),
                             DataCell(Text('₹${order.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                            DataCell(Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: order.status == 'Paid' ? Colors.green.shade100 : Colors.orange.shade100,
-                                borderRadius: BorderRadius.circular(12)
-                              ),
-                              child: Text(order.status, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: order.status == 'Paid' ? Colors.green.shade800 : Colors.orange.shade800)),
+                            DataCell(Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: (order.status == 'Delivered' || order.status == 'Completed') ? Colors.green.shade100 : Colors.blue.shade100,
+                                    borderRadius: BorderRadius.circular(4)
+                                  ),
+                                  child: Text(order.status, style: TextStyle(fontSize: 10, color: Colors.grey[800])),
+                                ),
+                                const SizedBox(height: 2),
+                                InkWell(
+                                  onTap: () async {
+                                     final newStatus = order.paymentStatus == 'Paid' ? 'Unpaid' : 'Paid';
+                                     await db.updateOrderPaymentStatus(order.id, newStatus);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: order.paymentStatus == 'Paid' ? Colors.green : Colors.red,
+                                      borderRadius: BorderRadius.circular(4)
+                                    ),
+                                    child: Text(
+                                      order.paymentStatus.toUpperCase(), 
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)
+                                    ),
+                                  ),
+                                ),
+                              ],
                             )),
-                            DataCell(IconButton(
-                              icon: const Icon(Icons.visibility_outlined, color: Colors.blue),
-                              tooltip: 'View Receipt',
-                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(order: order))),
+                            DataCell(Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.share, color: Colors.green, size: 20),
+                                  tooltip: 'Send Reminder',
+                                  onPressed: () async {
+                                    final text = Uri.encodeComponent("Hello ${order.customerName},\nYour bill of ₹${order.totalAmount} (Order #${order.id.substring(0,4)}) is pending. Please pay at the earliest.\n- Namkeen Factory");
+                                    final url = Uri.parse("https://wa.me/?text=$text");
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url);
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.visibility_outlined, color: Colors.blue, size: 20),
+                                  tooltip: 'View Receipt',
+                                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(order: order))),
+                                ),
+                              ],
                             )),
                           ]);
                         }).toList(),

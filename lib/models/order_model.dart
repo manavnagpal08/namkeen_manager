@@ -7,6 +7,7 @@ class OrderModel {
   final double totalAmount;
   final List<OrderItem> items;
   final String status;
+  final String paymentStatus; // New field
   final double gstPercentage;
   final double gstAmount;
 
@@ -17,6 +18,7 @@ class OrderModel {
     required this.totalAmount,
     required this.items,
     this.status = 'Created',
+    this.paymentStatus = 'Unpaid', // Default
     this.gstPercentage = 0,
     this.gstAmount = 0,
   });
@@ -29,6 +31,7 @@ class OrderModel {
       totalAmount: (data['total_amount'] ?? 0).toDouble(),
       items: (data['items'] as List<dynamic>?)?.map((x) => OrderItem.fromMap(x)).toList() ?? [],
       status: data['status'] ?? 'Created',
+      paymentStatus: data['payment_status'] ?? (data['status'] == 'Paid' ? 'Paid' : 'Unpaid'), // Migration fallback
       gstPercentage: (data['gst_percentage'] ?? 0).toDouble(),
       gstAmount: (data['gst_amount'] ?? 0).toDouble(),
     );
@@ -41,6 +44,7 @@ class OrderModel {
       'total_amount': totalAmount,
       'items': items.map((x) => x.toMap()).toList(),
       'status': status,
+      'payment_status': paymentStatus,
       'gst_percentage': gstPercentage,
       'gst_amount': gstAmount,
     };

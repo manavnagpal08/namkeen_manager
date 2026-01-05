@@ -6,6 +6,7 @@ import '../../services/database_service.dart';
 import 'add_edit_material_screen.dart';
 import 'raw_material_history_screen.dart';
 import '../../services/stock_service.dart';
+import 'forecast_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -52,6 +53,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics_outlined),
+            tooltip: 'Predictive Forecast',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForecastScreen())),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.secondary,

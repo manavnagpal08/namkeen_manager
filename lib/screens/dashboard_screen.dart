@@ -33,6 +33,7 @@ import 'support_screen.dart';
 
 import '../models/assignment_model.dart'; 
 import '../core/responsive_layout.dart';
+import '../widgets/weekly_sales_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -375,22 +376,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // --- Helpers reused ---
 
   Widget _buildWelcomeHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Overview',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+    final auth = Provider.of<AuthService>(context, listen: false);
+    final user = auth.currentUser;
+    final name = user?.name ?? 'Manager';
+
+    return GlassContainer(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      borderRadius: 16,
+      color: Colors.white,
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
+            child: Text(name.substring(0, 1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary, fontSize: 20)),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Here is what\'s happening in the factory today.',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome, $name!',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+              ),
+              const Text(
+                'Here is your factory snapshot.',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: AppTheme.primary),
+            onPressed: () {},
+          )
+        ],
+      ),
     );
   }
 
@@ -522,56 +543,114 @@ class _DashboardScreenState extends State<DashboardScreen> {
       key: _keyStats,
       title: 'Factory Overview',
       description: 'Track Raw Material, Active Batches, and Warehouse Stock at a glance.',
-      child: GridView.count(
-      crossAxisCount: isDesktop ? 4 : 2, 
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: isDesktop ? 1.5 : 1.0,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        StreamBuilder<List<RawMaterialModel>>(
-          stream: db.getRawMaterials(),
-          builder: (context, snapshot) {
-            final count = snapshot.data?.where((i) => i.currentStock <= i.minimumThreshold).length ?? 0;
-            return InkWell(
-              onTap: () => _navigateToDesktopPage(const InventoryScreen()),
-              child: _buildStatCard('Low Stock', '$count Items', Colors.red, isLoading: snapshot.connectionState == ConnectionState.waiting),
-            );
-          },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Sales Chart Section (Premium Look)
+          StreamBuilder<List<OrderModel>>(
+            stream: db.getOrdersStream(),
+            builder: (context, snapshot) {
+               final orders = snapshot.data ?? [];
+               // Calc total sales today
+               final today = DateTime.now();
+               final todaySales = orders.where((o) => 
+                 o.date.year == today.year && o.date.month == today.month && o.date.day == today.day
+               ).fold(0.0, (sum, o) => sum + o.totalAmount);
+
+               return GlassContainer(
+                 padding: const EdgeInsets.all(20),
+                 borderRadius: 24,
+                 gradient: const LinearGradient(
+                   colors: [Color(0xFF4FA8C5), Color(0xFF4F5AC5)], // Premium Blue Gradient
+                   begin: Alignment.topLeft,
+                   end: Alignment.bottomRight
+                 ),
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Row(
+                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       children: [
+                         Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text('Weekly Sales Trend', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+                             const SizedBox(height: 4),
+                             Text('₹${todaySales.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                             const Text('Today\'s Revenue', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                           ],
+                         ),
+                         Container(
+                           padding: const EdgeInsets.all(8),
+                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                           child: const Icon(Icons.trending_up, color: Colors.white),
+                         )
+                       ],
+                     ),
+                     const SizedBox(height: 20),
+                     WeeklySalesChart(orders: orders),
+                   ],
+                 ),
+               );
+            },
+          ),
+          
+          const SizedBox(height: 16),
+
+          // 2. Stats Grid
+          GridView.count(
+          crossAxisCount: isDesktop ? 4 : 2, 
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.1, // Slightly taller
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            StreamBuilder<List<RawMaterialModel>>(
+              stream: db.getRawMaterials(),
+              builder: (context, snapshot) {
+                final count = snapshot.data?.where((i) => i.currentStock <= i.minimumThreshold).length ?? 0;
+                return InkWell(
+                  onTap: () => _navigateToDesktopPage(const InventoryScreen()),
+                  child: _buildStatCard('Low Stock', '$count Alerts', Colors.red, Icons.warning_amber_rounded, isLoading: snapshot.connectionState == ConnectionState.waiting),
+                );
+              },
+            ),
+            StreamBuilder<List<BatchModel>>(
+              stream: db.getBatches(),
+              builder: (context, snapshot) {
+                 final count = snapshot.data?.where((b) => b.status == 'In Progress').length ?? 0;
+                 return InkWell(
+                   onTap: () => _navigateToDesktopPage(const ProductionScreen()),
+                   child: _buildStatCard('Production', '$count Batches', Colors.orange, Icons.whatshot, isLoading: snapshot.connectionState == ConnectionState.waiting),
+                 );
+              },
+            ),
+            StreamBuilder<List<OrderModel>>(
+              stream: db.getOrders(),
+              builder: (context, snapshot) {
+                 final count = snapshot.data?.where((o) => o.status != 'Completed' && o.status != 'Cancelled').length ?? 0; 
+                 return InkWell(
+                   onTap: () => _navigateToDesktopPage(const OrderListScreen()),
+                   child: _buildStatCard('Pending Orders', '$count Active', Colors.blue, Icons.shopping_cart, isLoading: snapshot.connectionState == ConnectionState.waiting),
+                 );
+              },
+            ),
+             StreamBuilder<List<WarehouseStockModel>>(
+              stream: db.getWarehouseStock(),
+              builder: (context, snapshot) {
+                 // Sum total packets
+                 final total = snapshot.data?.fold(0.0, (sum, item) => sum + item.quantityPackets) ?? 0;
+                 return InkWell(
+                   onTap: () => _navigateToDesktopPage(const WarehouseScreen()),
+                   child: _buildStatCard('Warehouse', '${total.toStringAsFixed(0)} Pkts', Colors.green, Icons.inventory_2, isLoading: snapshot.connectionState == ConnectionState.waiting),
+                 );
+              },
+            ),
+          ],
         ),
-        StreamBuilder<List<BatchModel>>(
-          stream: db.getBatches(),
-          builder: (context, snapshot) {
-             final count = snapshot.data?.where((b) => b.status == 'In Progress').length ?? 0;
-             return InkWell(
-               onTap: () => _navigateToDesktopPage(const ProductionScreen()),
-               child: _buildStatCard('Active Batches', '$count Running', Colors.orange, isLoading: snapshot.connectionState == ConnectionState.waiting),
-             );
-          },
-        ),
-        StreamBuilder<List<OrderModel>>(
-          stream: db.getOrders(),
-          builder: (context, snapshot) {
-             final count = snapshot.data?.length ?? 0; 
-             return InkWell(
-               onTap: () => _navigateToDesktopPage(const OrderListScreen()),
-               child: _buildStatCard('Total Orders', '$count', Colors.blue, isLoading: snapshot.connectionState == ConnectionState.waiting),
-             );
-          },
-        ),
-         StreamBuilder<List<WarehouseStockModel>>(
-          stream: db.getWarehouseStock(),
-          builder: (context, snapshot) {
-             final count = snapshot.data?.length ?? 0;
-             return InkWell(
-               onTap: () => _navigateToDesktopPage(const WarehouseScreen()),
-               child: _buildStatCard('Finished Goods', '$count Lots', Colors.green, isLoading: snapshot.connectionState == ConnectionState.waiting),
-             );
-          },
-        ),
-      ],
-    ),
+        ],
+      ),
     );
   }
   
@@ -588,10 +667,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _buildStatCard(String title, String value, Color color, {bool isLoading = false}) {
+  Widget _buildStatCard(String title, String value, Color color, IconData icon, {bool isLoading = false}) {
     return GlassContainer(
-      padding: const EdgeInsets.all(20),
-      borderRadius: 24,
+      padding: const EdgeInsets.all(16),
+      borderRadius: 20,
+      border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
+      gradient: LinearGradient(
+        colors: [Colors.white.withValues(alpha: 0.9), Colors.white.withValues(alpha: 0.6)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight
+      ),
       child: isLoading 
         ? Center(child: CircularProgressIndicator(color: color)) 
         : Column(
@@ -599,17 +684,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.analytics, color: color, size: 20),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 16),
-          Text(value, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-          const SizedBox(height: 4),
-          Text(title, style: TextStyle(fontSize: 14, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+          const Spacer(),
+          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 2),
+          Text(title, style: TextStyle(fontSize: 13, color: Colors.grey[700], fontWeight: FontWeight.w500)),
         ],
       ),
     );

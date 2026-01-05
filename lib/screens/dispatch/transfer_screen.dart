@@ -68,8 +68,9 @@ class _TransferScreenState extends State<TransferScreen> {
                                 employeeId: 'ADMIN',
                               );
                               await db.addTransfer(t);
-                              _materialCtrl.clear(); _qtyCtrl.clear(); _toCtrl.clear();
+
                               if (mounted) {
+                                _materialCtrl.clear(); _qtyCtrl.clear(); _toCtrl.clear();
                                 setState(() {}); 
                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Challan Generated')));
                               }

@@ -64,10 +64,11 @@ class _DispatchScreenState extends State<DispatchScreen> {
                               dispatchDate: DateTime.now(),
                             );
                             await db.addDispatch(d);
-                            _destCtrl.clear(); _transportCtrl.clear(); _weightCtrl.clear();
+                            
                             if (mounted) {
-                               setState(() {}); 
-                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dispatch Logged')));
+                              _destCtrl.clear(); _transportCtrl.clear(); _weightCtrl.clear();
+                              setState(() {}); 
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dispatch Logged')));
                             }
                           },
                           icon: const Icon(Icons.add_circle_outline),
