@@ -39,7 +39,7 @@ class WeeklySalesChart extends StatelessWidget {
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
               // tooltipBgColor: Colors.blueGrey, // Removed deprecated property
-              getTooltipColor: (_) => Colors.blueGrey, // Use this callback instead
+              getTooltipColor: (_) => const Color(0xFF4FA8C5), // Match bar color
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                  return BarTooltipItem(
                    '₹${rod.toY.round()}',
@@ -56,7 +56,7 @@ class WeeklySalesChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (double value, TitleMeta meta) {
-                  const style = TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 10);
+                  final style = TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 10);
                   final date = now.subtract(Duration(days: 6 - value.toInt()));
                   return SideTitleWidget(
                     axisSide: meta.axisSide,
@@ -75,13 +75,13 @@ class WeeklySalesChart extends StatelessWidget {
               barRods: [
                 BarChartRodData(
                   toY: salesPerDay[i] ?? 0,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: const Color(0xFF4FA8C5), // Nice Blue
                   width: 16,
                   borderRadius: BorderRadius.circular(4),
                   backDrawRodData: BackgroundBarChartRodData(
                     show: true,
                     toY: maxY * 1.1,
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                   ),
                 ),
               ],
