@@ -47,13 +47,31 @@ class ReceiptPreviewScreen extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (settings.showLogo) ...[
-                          if (settings.logoBase64 != null)
-                             Image.memory(base64Decode(settings.logoBase64!), height: 60)
-                          else
-                             Image.asset('assets/images/logo.png', height: 60, errorBuilder: (c,e,s) => const SizedBox.shrink()),
-                          const SizedBox(height: 8),
-                      ],
+                  if (settings.showLogo && settings.logoBase64 != null && settings.logoBase64!.isNotEmpty)
+                        Builder(
+                          builder: (context) {
+                            try {
+                              return Image.memory(
+                                base64Decode(settings.logoBase64!),
+                                height: 60,
+                                errorBuilder: (c, e, s) => const SizedBox.shrink(),
+                              );
+                            } catch (e) {
+                              return const SizedBox.shrink();
+                            }
+                          },
+                        )
+                      else if (settings.showLogo)
+                         Image.asset('assets/images/logo.png', height: 60, errorBuilder: (c,e,s) => const SizedBox.shrink()),
+                      
+                      const SizedBox(height: 8),
+                      // if (settings.showLogo) ...[
+                      //     if (settings.logoBase64 != null)
+                      //        Image.memory(base64Decode(settings.logoBase64!), height: 60)
+                      //     else
+                      //        Image.asset('assets/images/logo.png', height: 60, errorBuilder: (c,e,s) => const SizedBox.shrink()),
+                      //     const SizedBox(height: 8),
+                      // ],
                       Text(settings.companyName.toUpperCase(), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                       Text(settings.address, style: const TextStyle(fontSize: 14, color: Colors.grey), textAlign: TextAlign.center),
                       Text('Ph: ${settings.phone} | GST: ${settings.gstNumber}', style: const TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
