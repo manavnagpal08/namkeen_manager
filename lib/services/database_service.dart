@@ -110,10 +110,14 @@ class DatabaseService {
     if (categoryId != null) {
       query = query.where('category_id', isEqualTo: categoryId);
     }
-    return query.orderBy('name').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
+    // Fix: Remove orderBy from Firestore query to avoid missing composite index error. Sort in Dart.
+    return query.snapshots().map((snapshot) {
+      var list = snapshot.docs.map((doc) {
         return ProductModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
       }).toList();
+      
+      list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return list;
     });
   }
 

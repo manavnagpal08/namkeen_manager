@@ -23,69 +23,114 @@ class _TransferScreenState extends State<TransferScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Material Transfer Challan'), backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
-      body: Column(
-        children: [
-          ExpansionTile(
-            title: const Text('Create Transfer Challan'),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    TextField(controller: _materialCtrl, decoration: const InputDecoration(labelText: 'Material Name')),
-                    const SizedBox(height: 10),
-                    TextField(controller: _qtyCtrl, decoration: const InputDecoration(labelText: 'Quantity'), keyboardType: TextInputType.number),
-                    const SizedBox(height: 10),
-                    Row(children: [
-                      Expanded(child: TextField(controller: _fromCtrl, decoration: const InputDecoration(labelText: 'From'))),
-                      const SizedBox(width: 10),
-                      Expanded(child: TextField(controller: _toCtrl, decoration: const InputDecoration(labelText: 'To'))),
-                    ]),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_materialCtrl.text.isEmpty) return;
-                        final t = TransferModel(
-                          id: '',
-                          materialName: _materialCtrl.text,
-                          quantity: double.tryParse(_qtyCtrl.text) ?? 0,
-                          fromLocation: _fromCtrl.text,
-                          toLocation: _toCtrl.text,
-                          transferDate: DateTime.now(),
-                          employeeId: 'ADMIN',
-                        );
-                        await db.addTransfer(t);
-                        _materialCtrl.clear(); _qtyCtrl.clear(); _toCtrl.clear();
-                        setState(() {}); 
-                      },
-                      child: const Text('Generate Challan'),
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
-          Expanded(
-            child: StreamBuilder<List<TransferModel>>(
-              stream: db.getTransfers(),
-              builder: (context, snapshot) {
-                final logs = snapshot.data ?? [];
-                return ListView.builder(
-                  itemCount: logs.length,
-                  itemBuilder: (context, index) {
-                    final log = logs[index];
-                    return ListTile(
-                      leading: const Icon(Icons.transfer_within_a_station),
-                      title: Text('${log.materialName} (${log.quantity})'),
-                      subtitle: Text('${log.fromLocation} -> ${log.toLocation}'),
-                      trailing: Text(log.transferDate.toString().substring(0,10)),
-                    );
-                  },
-                );
-              },
-            ),
-          )
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+             // Compact Form
+             Card(
+                elevation: 0,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade300)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                       const Text('New Transfer Challan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                       const SizedBox(height: 12),
+                       Wrap(
+                         spacing: 12,
+                         runSpacing: 12,
+                         crossAxisAlignment: WrapCrossAlignment.center,
+                         children: [
+                           SizedBox(width: 200, child: TextField(controller: _materialCtrl, decoration: const InputDecoration(labelText: 'Material Name', isDense: true, border: OutlineInputBorder()))),
+                           SizedBox(width: 100, child: TextField(controller: _qtyCtrl, decoration: const InputDecoration(labelText: 'Qty', isDense: true, border: OutlineInputBorder()), keyboardType: TextInputType.number)),
+                           SizedBox(width: 140, child: TextField(controller: _fromCtrl, decoration: const InputDecoration(labelText: 'From', isDense: true, border: OutlineInputBorder()))),
+                           const Icon(Icons.arrow_forward, color: Colors.grey),
+                           SizedBox(width: 140, child: TextField(controller: _toCtrl, decoration: const InputDecoration(labelText: 'To', isDense: true, border: OutlineInputBorder()))),
+                           ElevatedButton.icon(
+                             style: ElevatedButton.styleFrom(
+                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18), 
+                               backgroundColor: AppTheme.primary, 
+                               foregroundColor: Colors.white
+                             ),
+                             onPressed: () async {
+                              if (_materialCtrl.text.isEmpty) return;
+                              final t = TransferModel(
+                                id: '',
+                                materialName: _materialCtrl.text,
+                                quantity: double.tryParse(_qtyCtrl.text) ?? 0,
+                                fromLocation: _fromCtrl.text,
+                                toLocation: _toCtrl.text,
+                                transferDate: DateTime.now(),
+                                employeeId: 'ADMIN',
+                              );
+                              await db.addTransfer(t);
+                              _materialCtrl.clear(); _qtyCtrl.clear(); _toCtrl.clear();
+                              setState(() {}); 
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Challan Generated')));
+                             },
+                             icon: const Icon(Icons.compare_arrows),
+                             label: const Text('TRANSFER'),
+                           )
+                         ]
+                       )
+                    ]
+                  )
+                )
+             ),
+             const SizedBox(height: 16),
+             Expanded(
+               child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade300)),
+                child: StreamBuilder<List<TransferModel>>(
+                  stream: db.getTransfers(),
+                  builder: (context, snapshot) {
+                     final logs = snapshot.data ?? [];
+                     if (logs.isEmpty) return const Center(child: Text('No Transfers Found'));
+                     
+                     return SingleChildScrollView(
+                       scrollDirection: Axis.vertical,
+                       child: SingleChildScrollView(
+                         scrollDirection: Axis.horizontal,
+                         child: ConstrainedBox(
+                           constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 64),
+                           child: DataTable(
+                             columnSpacing: 24,
+                             headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
+                             columns: const [
+                               DataColumn(label: Text('DATE', style: TextStyle(fontWeight: FontWeight.bold))),
+                               DataColumn(label: Text('MATERIAL', style: TextStyle(fontWeight: FontWeight.bold))),
+                               DataColumn(label: Text('QTY', style: TextStyle(fontWeight: FontWeight.bold))),
+                               DataColumn(label: Text('FLOW', style: TextStyle(fontWeight: FontWeight.bold))),
+                               DataColumn(label: Text('BY', style: TextStyle(fontWeight: FontWeight.bold))),
+                             ],
+                             rows: logs.map((log) {
+                               return DataRow(cells: [
+                                 DataCell(Text(log.transferDate.toString().substring(0, 10))),
+                                 DataCell(Text(log.materialName, style: const TextStyle(fontWeight: FontWeight.w500))),
+                                 DataCell(Text(log.quantity.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                 DataCell(Row(children: [
+                                    Text(log.fromLocation, style: const TextStyle(color: Colors.grey)),
+                                    const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey)),
+                                    Text(log.toLocation, style: const TextStyle(fontWeight: FontWeight.w500)),
+                                 ])),
+                                 DataCell(Text(log.employeeId, style: const TextStyle(fontSize: 12))),
+                               ]);
+                             }).toList(),
+                           ),
+                         ),
+                       ),
+                     );
+                  }
+                )
+               )
+             )
+          ],
+        ),
       ),
     );
   }
