@@ -7,6 +7,9 @@ class CompanySettingsModel {
   final String logoUrl;
   final String footerMessage;
   final String termsAndConditions;
+  final bool useThermal80mm;
+  final bool preferA4;
+  final double gstRate;
   final bool showLogo;
   final String? logoBase64;
 

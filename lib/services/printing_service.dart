@@ -88,6 +88,155 @@ class PrintingService {
     }
   }
 
+  // A4 PDF Invoice for Order
+  Future<void> printOrderPDF(OrderModel order, CompanySettingsModel settings) async {
+    final pdf = pw.Document();
+    
+    // Load Logo Logic
+    pw.ImageProvider? logo;
+    if (settings.showLogo) {
+      if (settings.logoBase64 != null && settings.logoBase64!.isNotEmpty) {
+        try {
+           final bytes = base64Decode(settings.logoBase64!);
+           logo = pw.MemoryImage(bytes);
+        } catch (e) {
+           debugPrint('Error decoding base64 logo: $e');
+        }
+      }
+      
+      // Fallback to asset
+      if (logo == null) {
+        try {
+          logo = await imageFromAssetBundle('assets/images/logo.png');
+        } catch (e) {
+          debugPrint('Error loading asset logo: $e');
+        }
+      }
+    }
+
+    final font = await PdfGoogleFonts.poppinsRegular();
+    final fontBold = await PdfGoogleFonts.poppinsBold();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        theme: pw.ThemeData.withFont(base: font, bold: fontBold),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                   if (logo != null) pw.Image(logo, width: 80, height: 80),
+                   pw.Expanded(
+                     child: pw.Column(
+                       crossAxisAlignment: pw.CrossAxisAlignment.end,
+                       children: [
+                         pw.Text(settings.companyName, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                         pw.Text(settings.address, textAlign: pw.TextAlign.right),
+                         pw.Text('Phone: ${settings.phone}', textAlign: pw.TextAlign.right),
+                         if (settings.gstNumber.isNotEmpty)
+                           pw.Text('GSTIN: ${settings.gstNumber}', textAlign: pw.TextAlign.right),
+                       ]
+                     )
+                   )
+                ]
+              ),
+              pw.SizedBox(height: 20),
+              pw.Divider(),
+              pw.SizedBox(height: 10),
+              
+              // Invoice Info & Customer
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('INVOICE TO:', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                      pw.Text(order.customerName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    ]
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text('INVOICE NO: #${order.id.length > 8 ? order.id.substring(0, 8).toUpperCase() : order.id}'),
+                      pw.Text('DATE: ${order.date.toIso8601String().substring(0, 10)}'),
+                      pw.Text('STATUS: ${order.status.toUpperCase()}', style: pw.TextStyle(color: order.status == 'Paid' ? PdfColors.green : PdfColors.orange)),
+                    ]
+                  )
+                ]
+              ),
+              
+              pw.SizedBox(height: 20),
+              
+              // Table
+              pw.TableHelper.fromTextArray(
+                headers: ['Item', 'Qty', 'Rate', 'Total'],
+                data: order.items.map((item) => [
+                  item.productName,
+                  '${item.quantity}',
+                  'Rs.${item.price}',
+                  'Rs.${(item.quantity * item.price).toStringAsFixed(2)}',
+                ]).toList(),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.black),
+                rowDecoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5))),
+                cellAlignments: {
+                  0: pw.Alignment.centerLeft,
+                  1: pw.Alignment.center,
+                  2: pw.Alignment.centerRight,
+                  3: pw.Alignment.centerRight,
+                },
+              ),
+              
+              pw.SizedBox(height: 20),
+              
+              // Totals
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                       pw.Text('Subtotal: Rs.${(order.totalAmount - order.gstAmount).toStringAsFixed(2)}'),
+                       if (order.gstAmount > 0)
+                         pw.Text('GST (12%): Rs.${order.gstAmount.toStringAsFixed(2)}'),
+                       pw.SizedBox(height: 4),
+                       pw.Text('GRAND TOTAL: Rs.${order.totalAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                    ]
+                  )
+                ]
+              ),
+              
+              pw.Spacer(),
+              
+              // Footer
+              pw.Divider(),
+              if (settings.footerMessage.isNotEmpty)
+                pw.Center(child: pw.Text(settings.footerMessage, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey))),
+                
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  pw.Text('Powered by FLIP CLIP', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
+                ]
+              )
+            ],
+          );
+        },
+      ),
+    );
+
+    // Print
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdf.save(),
+    );
+  }
+
   // A4 PDF Print for Batch Report (Detailed)
   Future<void> printBatchReport(BatchModel batch, List<AssignmentModel> assignments, List<EmployeeModel> employees) async {
     final pdf = pw.Document();
