@@ -27,7 +27,7 @@ import 'settings/manage_packing_screen.dart';
 import 'settings/admin_settings_screen.dart';
 import 'settings/department_login_manager.dart';
 
-import 'analytics/daily_summary_screen.dart';
+import 'support_screen.dart';
 import 'customers/customer_list_screen.dart';
 import '../models/assignment_model.dart'; 
 import '../core/responsive_layout.dart';
@@ -445,7 +445,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (role == 'Admin' || role == 'Manager' || role == 'Supervisor' || role == 'Worker') ...[
                _drawerItem(context, Icons.factory, 'Production Batches', const ProductionScreen()),
             ],
-
             if (role == 'Admin' || role == 'Manager') ...[
                _drawerItem(context, Icons.point_of_sale, 'New Order (POS)', const OrderEntryScreen()),
             ],
@@ -454,6 +453,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                _drawerItem(context, Icons.local_shipping, 'Dispatch Logs', const DispatchScreen()),
                _drawerItem(context, Icons.compare_arrows, 'Material Transfer', const TransferScreen()),
             ],
+            
+            const Divider(),
+            _drawerItem(context, Icons.verified, 'Support & Updates', const SupportScreen(), color: AppTheme.primary),
+            ListTile(
+              title: const Center(child: Text('Powered by FLIP CLIP', style: TextStyle(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.bold))),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()));
+              },
+            ),
           ],
         ),
       ),
