@@ -360,7 +360,7 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
                                 decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
                                 child: const Icon(Icons.local_mall, color: Colors.grey, size: 20),
                               ),
-                              title: Text('Product (ID: ...${item.productId.substring(0,4)})', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              title: Text(item.productName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                               subtitle: Text('${item.quantity.toInt()} units x ₹${item.price}'),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,

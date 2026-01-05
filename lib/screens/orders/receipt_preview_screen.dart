@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/order_model.dart';
@@ -45,6 +46,13 @@ class ReceiptPreviewScreen extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (settings.showLogo) ...[
+                          if (settings.logoBase64 != null)
+                             Image.memory(base64Decode(settings.logoBase64!), height: 60)
+                          else
+                             Image.asset('assets/images/logo.png', height: 60, errorBuilder: (c,e,s) => const SizedBox.shrink()),
+                          const SizedBox(height: 8),
+                      ],
                       Text(settings.companyName.toUpperCase(), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                       Text(settings.address, style: const TextStyle(fontSize: 14, color: Colors.grey), textAlign: TextAlign.center),
                       Text('Ph: ${settings.phone} | GST: ${settings.gstNumber}', style: const TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
@@ -62,7 +70,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
-                            Expanded(child: Text('${item.productName} (${item.sizeName})')),
+                            Expanded(child: Text(item.productName)),
                             Text('${item.quantity.toInt()} x ', style: const TextStyle(color: Colors.grey)),
                             Text('Rs.${item.price}', style: const TextStyle(fontWeight: FontWeight.bold)),
                           ],
