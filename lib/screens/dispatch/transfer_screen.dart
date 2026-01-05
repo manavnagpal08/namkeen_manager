@@ -69,8 +69,10 @@ class _TransferScreenState extends State<TransferScreen> {
                               );
                               await db.addTransfer(t);
                               _materialCtrl.clear(); _qtyCtrl.clear(); _toCtrl.clear();
-                              setState(() {}); 
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Challan Generated')));
+                              if (mounted) {
+                                setState(() {}); 
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Challan Generated')));
+                              }
                              },
                              icon: const Icon(Icons.compare_arrows),
                              label: const Text('TRANSFER'),

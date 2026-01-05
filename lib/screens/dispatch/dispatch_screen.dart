@@ -65,8 +65,10 @@ class _DispatchScreenState extends State<DispatchScreen> {
                             );
                             await db.addDispatch(d);
                             _destCtrl.clear(); _transportCtrl.clear(); _weightCtrl.clear();
-                            setState(() {}); 
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dispatch Logged')));
+                            if (mounted) {
+                               setState(() {}); 
+                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dispatch Logged')));
+                            }
                           },
                           icon: const Icon(Icons.add_circle_outline),
                           label: const Text('ADD LOG'),

@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../core/glass_container.dart';
-import '../services/auth_service.dart';
-import '../services/database_service.dart';
-import '../models/department_account_model.dart';
 import 'dashboard_screen.dart';
-import 'onboarding_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

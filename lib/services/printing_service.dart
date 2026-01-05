@@ -4,7 +4,6 @@ import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:flutter/services.dart';
 import 'dart:convert';
 import '../models/order_model.dart';
 import '../models/batch_model.dart';

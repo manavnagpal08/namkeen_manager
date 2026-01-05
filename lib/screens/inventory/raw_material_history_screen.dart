@@ -187,28 +187,7 @@ class RawMaterialHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: _buildHeaderCard(material),
-        ),
-        Expanded(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.history, size: 60, color: Colors.grey[300]),
-                const SizedBox(height: 16),
-                Text('No history records found', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   void _showRestockDialog(BuildContext context) {
     final qtyCtrl = TextEditingController();

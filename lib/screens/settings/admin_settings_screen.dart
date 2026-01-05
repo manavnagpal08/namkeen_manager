@@ -29,7 +29,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _preferA4 = false;
   bool _showLogo = true;
   String? _logoBase64;
-  bool _dataLoaded = false;
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();

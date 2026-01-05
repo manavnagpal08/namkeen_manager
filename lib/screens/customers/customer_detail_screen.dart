@@ -193,7 +193,7 @@ class CustomerDetailScreen extends StatelessWidget {
                   );
 
                   await db.addPayment(payment);
-                  Navigator.pop(context);
+                  if (context.mounted) Navigator.pop(context);
                 },
                 child: const Text('Confirm Payment', style: TextStyle(fontSize: 16, color: Colors.white)),
               ),

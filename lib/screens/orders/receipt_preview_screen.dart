@@ -5,7 +5,6 @@ import '../../services/printing_service.dart';
 import '../../services/database_service.dart';
 import '../../models/company_settings_model.dart';
 import 'package:provider/provider.dart';
-import '../settings/printer_scan_screen.dart';
 
 class ReceiptPreviewScreen extends StatelessWidget {
   final OrderModel order;

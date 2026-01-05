@@ -138,7 +138,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 lastTransactionDate: DateTime.now()
               );
               await db.addCustomer(newCust);
-              Navigator.pop(context);
+              if (context.mounted) Navigator.pop(context);
             }, 
             child: const Text('Add Customer')
           ),
