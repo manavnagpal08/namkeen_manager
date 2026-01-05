@@ -302,6 +302,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'roles': ['Admin', 'Manager'],
         'screen': const EmployeeListScreen(),
       },
+      {
+        'label': 'Support',
+        'icon': Icons.help_outline,
+        'roles': ['Admin', 'Manager', 'Supervisor', 'Worker', 'Dispatch', 'Guest'],
+        'screen': const SupportScreen(),
+      },
     ];
 
     // Filter based on current user role
@@ -341,15 +347,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }).toList(),
       // Add padding at bottom to avoid edge overlap, but Trailing already does that.
       trailing: Padding(
-        padding: const EdgeInsets.only(bottom: 20, top: 20),
-        child: RotatedBox(
-          quarterTurns: -1,
-          child: Text(
-            role.toUpperCase(), 
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)
+      padding: const EdgeInsets.only(bottom: 20, top: 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+            InkWell(
+             onTap: () => setState(() { _currentDesktopPage = const SupportScreen(); _selectedIndex = 99; }),
+             child: RotatedBox(
+              quarterTurns: -1,
+              child: const Text('POWERED BY FLIP CLIP', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+             ),
           ),
-        ),
+          const SizedBox(height: 16),
+          RotatedBox(
+            quarterTurns: -1,
+            child: Text(
+              role.toUpperCase(), 
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)
+            ),
+          ),
+        ],
       ),
+    ),
     );
   }
 
@@ -385,91 +404,99 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Drawer(
       child: Container(
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.95)),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(
-                color: AppTheme.primary,
-                gradient: LinearGradient(
-                  colors: [AppTheme.primary, Color(0xFF1E40AF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.95)),
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                UserAccountsDrawerHeader(
+                  decoration: const BoxDecoration(
+                    color: AppTheme.primary,
+                    gradient: LinearGradient(
+                      colors: [AppTheme.primary, Color(0xFF1E40AF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  accountName: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  accountEmail: Text('$role • $id', style: const TextStyle(fontSize: 12)),
+                  currentAccountPicture: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: Text(name.substring(0, 1), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                    ),
+                  ),
+                  otherAccountsPictures: [
+                    IconButton(
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                      onPressed: () {
+                        auth.logout();
+                        Navigator.pushReplacementNamed(context, '/'); 
+                      },
+                    )
+                  ],
                 ),
-              ),
-              accountName: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              accountEmail: Text('$role • $id', style: const TextStyle(fontSize: 12)),
-              currentAccountPicture: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Text(name.substring(0, 1), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primary)),
-                ),
-              ),
-              otherAccountsPictures: [
-                IconButton(
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  onPressed: () {
-                    auth.logout();
-                    Navigator.pushReplacementNamed(context, '/'); 
-                  },
-                )
+                
+                _drawerItem(context, Icons.dashboard, 'Dashboard', null),
+
+                if (role == 'Admin' || role == 'Manager' || role == 'Supervisor') ...[
+                  _drawerItem(context, Icons.inventory, 'Raw Material', const InventoryScreen()),
+                  _drawerItem(context, Icons.warehouse, 'Warehouse (Finished)', const WarehouseScreen()),
+                  _drawerItem(context, Icons.history, 'Daily Summary', const DailySummaryScreen()),
+                ],
+                
+                if (role == 'Admin' || role == 'Manager') ...[
+                   _drawerItem(context, Icons.analytics, 'Poll Analytics', const AnalyticsScreen(), color: Colors.purple),
+                   if (role == 'Admin') ...[
+                     const Divider(),
+                     _drawerItem(context, Icons.settings_applications, 'Admin Settings', const AdminSettingsScreen()),
+                     _drawerItem(context, Icons.admin_panel_settings, 'Dept Login Manager', const DepartmentLoginManager()), 
+                   ],
+                   const Divider(),
+                   _drawerItem(context, Icons.shopping_bag, 'Products & Recipes', const ProductListScreen()),
+                   _drawerItem(context, Icons.category, 'Attributes', const ManageAttributesScreen()),
+                   _drawerItem(context, Icons.settings, 'Pack Config', const ManagePackingScreen()),
+                   _drawerItem(context, Icons.people, 'Employees', const EmployeeListScreen()),
+                   const Divider(),
+                ],
+
+                if (role == 'Admin' || role == 'Manager' || role == 'Supervisor' || role == 'Worker') ...[
+                   _drawerItem(context, Icons.factory, 'Production Batches', const ProductionScreen()),
+                ],
+                if (role == 'Admin' || role == 'Manager') ...[
+                   _drawerItem(context, Icons.point_of_sale, 'New Order (POS)', const OrderEntryScreen()),
+                ],
+
+                if (role == 'Admin' || role == 'Manager' || role == 'Dispatch') ...[
+                   _drawerItem(context, Icons.local_shipping, 'Dispatch Logs', const DispatchScreen()),
+                   _drawerItem(context, Icons.compare_arrows, 'Material Transfer', const TransferScreen()),
+                ],
+                
+                const Divider(),
+                _drawerItem(context, Icons.people_alt, 'Customer Ledger', const CustomerListScreen()),
+                _drawerItem(context, Icons.verified, 'Support & Updates', const SupportScreen(), color: AppTheme.primary),
               ],
             ),
-            
-            _drawerItem(context, Icons.dashboard, 'Dashboard', null),
-
-            if (role == 'Admin' || role == 'Manager' || role == 'Supervisor') ...[
-              _drawerItem(context, Icons.inventory, 'Raw Material', const InventoryScreen()),
-              _drawerItem(context, Icons.warehouse, 'Warehouse (Finished)', const WarehouseScreen()),
-              _drawerItem(context, Icons.history, 'Daily Summary', const DailySummaryScreen()),
-            ],
-            
-            if (role == 'Admin' || role == 'Manager') ...[
-               _drawerItem(context, Icons.analytics, 'Poll Analytics', const AnalyticsScreen(), color: Colors.purple),
-               if (role == 'Admin') ...[
-                 const Divider(),
-                 _drawerItem(context, Icons.settings_applications, 'Admin Settings', const AdminSettingsScreen()),
-                 _drawerItem(context, Icons.admin_panel_settings, 'Dept Login Manager', const DepartmentLoginManager()), 
-               ],
-               const Divider(),
-               _drawerItem(context, Icons.shopping_bag, 'Products & Recipes', const ProductListScreen()),
-               _drawerItem(context, Icons.category, 'Attributes', const ManageAttributesScreen()),
-               _drawerItem(context, Icons.settings, 'Pack Config', const ManagePackingScreen()),
-               _drawerItem(context, Icons.people, 'Employees', const EmployeeListScreen()),
-               const Divider(),
-            ],
-
-            if (role == 'Admin' || role == 'Manager' || role == 'Supervisor' || role == 'Worker') ...[
-               _drawerItem(context, Icons.factory, 'Production Batches', const ProductionScreen()),
-            ],
-            if (role == 'Admin' || role == 'Manager') ...[
-               _drawerItem(context, Icons.point_of_sale, 'New Order (POS)', const OrderEntryScreen()),
-            ],
-
-            if (role == 'Admin' || role == 'Manager' || role == 'Dispatch') ...[
-               _drawerItem(context, Icons.local_shipping, 'Dispatch Logs', const DispatchScreen()),
-               _drawerItem(context, Icons.compare_arrows, 'Material Transfer', const TransferScreen()),
-            ],
-            
-            const Divider(),
-            _drawerItem(context, Icons.people_alt, 'Customer Ledger', const CustomerListScreen()),
-            _drawerItem(context, Icons.verified, 'Support & Updates', const SupportScreen(), color: AppTheme.primary),
-            ListTile(
-              title: const Center(child: Text('Powered by FLIP CLIP', style: TextStyle(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.bold))),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()));
-              },
-            ),
-          ],
-        ),
+          ),
+          // Footer Pinned to Bottom
+          const Divider(height: 1),
+          ListTile(
+            title: const Center(child: Text('Powered by FLIP CLIP', style: TextStyle(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.bold))),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()));
+            },
+          ),
+        ],
       ),
+    ),
     );
   }
 
