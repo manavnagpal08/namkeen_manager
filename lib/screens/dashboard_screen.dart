@@ -560,11 +560,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                return GlassContainer(
                  padding: const EdgeInsets.all(20),
                  borderRadius: 24,
-                 gradient: const LinearGradient(
-                   colors: [Color(0xFF4FA8C5), Color(0xFF4F5AC5)], // Premium Blue Gradient
-                   begin: Alignment.topLeft,
-                   end: Alignment.bottomRight
-                 ),
+                 // gradient: removed for white theme
                  child: Column(
                    crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
@@ -574,16 +570,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                          Column(
                            crossAxisAlignment: CrossAxisAlignment.start,
                            children: [
-                             Text('Weekly Sales Trend', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+                             Text('Weekly Sales Trend', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                              const SizedBox(height: 4),
-                             Text('₹${todaySales.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                             const Text('Today\'s Revenue', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                             Text('₹${todaySales.toStringAsFixed(0)}', style: const TextStyle(color: Colors.black87, fontSize: 24, fontWeight: FontWeight.bold)),
+                             const Text('Today\'s Revenue', style: TextStyle(color: Colors.grey, fontSize: 10)),
                            ],
                          ),
                          Container(
                            padding: const EdgeInsets.all(8),
-                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                           child: const Icon(Icons.trending_up, color: Colors.white),
+                           decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+                           child: const Icon(Icons.trending_up, color: AppTheme.primary),
                          )
                        ],
                      ),
