@@ -147,6 +147,12 @@ class SupportScreen extends StatelessWidget {
                   color: Colors.black,
                   onPressed: () => _launchUrl(iosDownloadUrl),
                 ),
+                _DownloadButton(
+                  icon: Icons.language,
+                  label: 'Open Web App (iOS)',
+                  color: Colors.deepPurple,
+                  onPressed: () => _launchUrl("https://sangambyfc.web.app"),
+                ),
               ],
             ),
             

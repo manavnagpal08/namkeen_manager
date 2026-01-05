@@ -74,6 +74,11 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/images/logo.png"
     icon_size: 48
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#FFFFFF"
+    theme_color: "#D32F2F"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
