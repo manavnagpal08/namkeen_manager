@@ -85,18 +85,16 @@ class ReceiptPreviewScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
+            Container(
             padding: const EdgeInsets.all(16),
             color: Colors.white,
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: const Icon(Icons.bluetooth),
-                    label: const Text('Connect Printer'),
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PrinterScanScreen()));
-                    },
+                    icon: const Icon(Icons.picture_as_pdf, color: Colors.blue),
+                    label: const Text('Print Invoice (PDF)'),
+                    onPressed: () => _printingService.printOrderPDF(order, settings),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -104,7 +102,10 @@ class ReceiptPreviewScreen extends StatelessWidget {
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.print),
                     label: const Text('Print Thermal'),
-                    onPressed: () => _printingService.printOrderThermal(order, settings),
+                    onPressed: () async {
+                       // Optional: Check connection first or let service handle
+                       _printingService.printOrderThermal(order, settings);
+                    },
                   ),
                 ),
               ],

@@ -105,7 +105,10 @@ class PrintingService {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('Batch Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                    pw.Row(children: [
+                       // Logo placeholder if needed, usually we pass imageprovider
+                       pw.Text('Batch Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                    ]),
                     pw.Text('Date: ${batch.startTime.toIso8601String().substring(0,10)}'),
                   ],
                 ),

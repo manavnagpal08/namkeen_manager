@@ -112,7 +112,8 @@ class StockService {
     final batch = BatchModel.fromMap(batchSnap.id, batchSnap.data()!);
 
     // Calculate Units
-    double packets = assignment.targetQuantity; // Assuming target was met
+    // Fix: Use actual completed units if available (user requested fast/perfect logic)
+    double packets = (assignment.completedUnits > 0) ? assignment.completedUnits : assignment.targetQuantity;
     double boxes = 0;
     double cartons = 0;
 

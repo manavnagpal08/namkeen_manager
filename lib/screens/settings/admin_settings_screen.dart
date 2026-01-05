@@ -111,6 +111,26 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 onChanged: (val) => setState(() => _useThermal80mm = val),
               ),
               
+              const SizedBox(height: 24),
+              _buildSectionHeader('Support & Branding'),
+              Card(
+                color: Colors.blue.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    children: [
+                       const Text('Need Help? Contact Support:', style: TextStyle(fontWeight: FontWeight.bold)),
+                       const SizedBox(height: 4),
+                       SelectableText('Manav Nagpal: +91 9896817707\nEmail: manav.nagpal2005@gmail.com', textAlign: TextAlign.center),
+                       const SizedBox(height: 8),
+                       const Text('Powered by FLIP CLIP', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('To change the Invoice Logo, please replace the file "assets/images/logo.png" in the application folder.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
