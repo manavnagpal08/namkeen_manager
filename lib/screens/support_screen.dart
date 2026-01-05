@@ -21,8 +21,9 @@ class SupportScreen extends StatelessWidget {
     
     // Direct download links (GitHub automatically redirects 'latest' to the version tag)
     // Note: This relies on the consistent naming convention in release.yml
+    // Direct download links
     const String apkDownloadUrl = "$repoUrl/releases/latest/download/app-release.apk";
-    const String exeDownloadUrl = "$repoUrl/releases/latest/download/app-release-windows.zip"; // Or .exe if raw
+    const String exeDownloadUrl = "$repoUrl/releases/latest/download/namkeen_manager.exe";
 
     return Scaffold(
       appBar: AppBar(
@@ -38,59 +39,78 @@ class SupportScreen extends StatelessWidget {
             const SizedBox(height: 20),
             // Branding
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+                boxShadow: [BoxShadow(blurRadius: 15, color: Colors.blue.withValues(alpha: 0.1))],
+                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.1), width: 2),
               ),
-              child: const Icon(Icons.verified, size: 60, color: AppTheme.primary), // Placeholder for Logo
+              child: const Icon(Icons.rocket_launch, size: 64, color: AppTheme.primary),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             const Text(
               'Powered by FLIP CLIP',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primary),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppTheme.primary, letterSpacing: 0.5),
             ),
             const SizedBox(height: 8),
             const Text(
               'Premium Factory Management Solutions',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(fontSize: 15, color: Colors.grey),
             ),
             
-            const SizedBox(height: 40),
+            const SizedBox(height: 48),
 
             // Contact Card
             Card(
               elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shadowColor: Colors.black26,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   children: [
-                    const Text('Need Help?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
+                    const Text('Need Help?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 24),
                     ListTile(
-                      leading: const Icon(Icons.person, color: AppTheme.primary),
-                      title: const Text('Contact: Manav Nagpal'),
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
+                        child: const Icon(Icons.person, color: AppTheme.primary),
+                      ),
+                      title: const Text('Contact', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      subtitle: const Text('Manav Nagpal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
                     ),
+                    const Divider(height: 24),
                     ListTile(
-                      leading: const Icon(Icons.phone, color: AppTheme.primary),
-                      title: const Text('+91 98765 43210'), // Replace with actual if known, or general support
-                      onTap: () => _launchUrl("tel:+919876543210"),
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.green[50], shape: BoxShape.circle),
+                        child: const Icon(Icons.phone, color: Colors.green),
+                      ),
+                      title: const Text('Phone', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      subtitle: const Text('+91 98968 17707', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                      onTap: () => _launchUrl("tel:+919896817707"),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                     ),
+                    const Divider(height: 24),
                     ListTile(
-                      leading: const Icon(Icons.email, color: AppTheme.primary),
-                      title: const Text('support@flipclip.com'), // Replace
-                      onTap: () => _launchUrl("mailto:support@flipclip.com"),
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.orange[50], shape: BoxShape.circle),
+                        child: const Icon(Icons.email, color: Colors.orange),
+                      ),
+                      title: const Text('Email', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      subtitle: const Text('manav.nagpal2005@gmail.com', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)),
+                      onTap: () => _launchUrl("mailto:manav.nagpal2005@gmail.com"),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                     ),
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 30),
-            const Divider(),
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
 
             // Download Section
             const Text(
@@ -99,9 +119,8 @@ class SupportScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Download and install the latest updates directly.',
+              'For Android & Windows',
               style: TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
 
@@ -112,14 +131,14 @@ class SupportScreen extends StatelessWidget {
               children: [
                 _DownloadButton(
                   icon: Icons.android,
-                  label: 'Download APK (Android)',
-                  color: Colors.green,
+                  label: 'Download APK',
+                  color: const Color(0xFF3DDC84), // Android Green
                   onPressed: () => _launchUrl(apkDownloadUrl),
                 ),
                 _DownloadButton(
                   icon: Icons.desktop_windows,
-                  label: 'Download EXE (Windows)',
-                  color: Colors.blueAccent,
+                  label: 'Download EXE',
+                  color: const Color(0xFF0078D7), // Windows Blue
                   onPressed: () => _launchUrl(exeDownloadUrl),
                 ),
               ],
