@@ -10,51 +10,72 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Release
+  build-android-win:
+    name: Build Android & Windows
     runs-on: windows-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
-
       - name: Install Dependencies
         run: flutter pub get
-
-      # Build Android APK
       - name: Build Android APK
         run: flutter build apk --release
-
       - name: Rename APK
         run: move build\app\outputs\flutter-apk\app-release.apk build\app\outputs\flutter-apk\namkeen_manager.apk
-
-      # Build Windows EXE
       - name: Build Windows Executable
         run: flutter build windows --release
-
-      # Compress Windows Build (Optional but recommended for distribution)
       - name: Compress Windows Build
         run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\windows\namkeen_manager_windows.zip
-
-      # Upload Release
-      - name: Create Release
+      - name: Upload Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             build/app/outputs/flutter-apk/namkeen_manager.apk
             build/windows/namkeen_manager_windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-ios:
+    name: Build iOS (No Sign)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - name: Install Dependencies
+        run: flutter pub get
+      - name: Build iOS (No Codesign)
+        run: flutter build ios --release --no-codesign
+      - name: Compress iOS Build
+        run: |
+          cd build/ios/iphoneos
+          mkdir Payload
+          cp -r Runner.app Payload/
+          zip -r namkeen_manager_ios.zip Payload
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/ios/iphoneos/namkeen_manager_ios.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

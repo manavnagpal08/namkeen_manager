@@ -21,9 +21,9 @@ class SupportScreen extends StatelessWidget {
     
     // Direct download links (GitHub automatically redirects 'latest' to the version tag)
     // Note: This relies on the consistent naming convention in release.yml
-    // Direct download links
     const String apkDownloadUrl = "$repoUrl/releases/latest/download/namkeen_manager.apk";
     const String exeDownloadUrl = "$repoUrl/releases/latest/download/namkeen_manager_windows.zip";
+    const String iosDownloadUrl = "$repoUrl/releases/latest/download/namkeen_manager_ios.zip";
 
     return Scaffold(
       appBar: AppBar(
@@ -119,7 +119,7 @@ class SupportScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'For Android & Windows',
+              'For Android, Windows & iOS',
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
@@ -140,6 +140,12 @@ class SupportScreen extends StatelessWidget {
                   label: 'Download EXE',
                   color: const Color(0xFF0078D7), // Windows Blue
                   onPressed: () => _launchUrl(exeDownloadUrl),
+                ),
+                _DownloadButton(
+                  icon: Icons.apple,
+                  label: 'Download iOS',
+                  color: Colors.black,
+                  onPressed: () => _launchUrl(iosDownloadUrl),
                 ),
               ],
             ),
