@@ -309,20 +309,35 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
                                 if (_selectedCustomer != null && textEditingController.text.isEmpty) {
                                   textEditingController.text = _selectedCustomer!.name;
                                 }
-                                return TextField(
-                                  controller: textEditingController,
-                                  focusNode: focusNode,
-                                  decoration: InputDecoration(
-                                    hintText: 'Search Customer...',
-                                    prefixIcon: const Icon(Icons.person_outline, size: 20),
-                                    isDense: true,
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    suffixIcon: _selectedCustomer != null 
-                                      ? IconButton(icon: const Icon(Icons.clear), onPressed: () {
-                                          setState(() { _selectedCustomer = null; textEditingController.clear(); });
-                                        }) 
-                                      : null
-                                  ),
+                                return Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: textEditingController,
+                                        focusNode: focusNode,
+                                        decoration: InputDecoration(
+                                          hintText: 'Search Customer...',
+                                          prefixIcon: const Icon(Icons.person_outline, size: 20),
+                                          isDense: true,
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                          suffixIcon: _selectedCustomer != null 
+                                            ? IconButton(icon: const Icon(Icons.clear), onPressed: () {
+                                                setState(() { _selectedCustomer = null; textEditingController.clear(); });
+                                              }) 
+                                            : null
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                                      child: IconButton(
+                                        icon: const Icon(Icons.person_add, color: AppTheme.primary),
+                                        tooltip: 'Add New Customer',
+                                        onPressed: () => _showAddCustomerDialog(context),
+                                      ),
+                                    ),
+                                  ],
                                 );
                               },
                             );
@@ -595,5 +610,52 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving order: $e'), backgroundColor: Colors.red));
       }
     }
+  }
+
+  void _showAddCustomerDialog(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Customer'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name', prefixIcon: Icon(Icons.person))),
+            const SizedBox(height: 12),
+            TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone))),
+            const SizedBox(height: 12),
+            TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address', prefixIcon: Icon(Icons.location_on))),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameCtrl.text.isEmpty) return;
+              
+              final newCustomer = CustomerModel(
+                id: '',
+                name: nameCtrl.text,
+                phone: phoneCtrl.text,
+                address: addressCtrl.text,
+                totalDue: 0,
+                lastTransactionDate: DateTime.now(),
+              );
+
+              await Provider.of<DatabaseService>(context, listen: false).addCustomer(newCustomer);
+              if (context.mounted) {
+                 Navigator.pop(context);
+                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Customer Added! Search to select.')));
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
   }
 }

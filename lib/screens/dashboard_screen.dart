@@ -16,6 +16,7 @@ import 'product_management/manage_attributes_screen.dart';
 import 'inventory/inventory_screen.dart';
 import 'inventory/warehouse_screen.dart';
 import 'analytics/analytics_screen.dart';
+import 'customers/customer_list_screen.dart';
 import 'package:namkeen_manager/screens/analytics/daily_summary_screen.dart';
 import 'product_management/product_list_screen.dart';
 import 'employees/employee_list_screen.dart';
@@ -29,7 +30,7 @@ import 'settings/admin_settings_screen.dart';
 import 'settings/department_login_manager.dart';
 
 import 'support_screen.dart';
-import 'customers/customer_list_screen.dart';
+
 import '../models/assignment_model.dart'; 
 import '../core/responsive_layout.dart';
 
@@ -456,6 +457,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
             
             const Divider(),
+            _drawerItem(context, Icons.people_alt, 'Customer Ledger', const CustomerListScreen()),
             _drawerItem(context, Icons.verified, 'Support & Updates', const SupportScreen(), color: AppTheme.primary),
             ListTile(
               title: const Center(child: Text('Powered by FLIP CLIP', style: TextStyle(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.bold))),

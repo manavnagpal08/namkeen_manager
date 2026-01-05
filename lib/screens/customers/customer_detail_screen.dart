@@ -1,14 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../models/customer_model.dart';
 import '../../services/database_service.dart';
 import '../../core/namkeen_theme.dart';
+import 'package:intl/intl.dart';
 
-class CustomerDetailScreen extends StatelessWidget {
+class CustomerDetailScreen extends StatefulWidget {
   final CustomerModel customer;
 
   const CustomerDetailScreen({super.key, required this.customer});
+
+  @override
+  State<CustomerDetailScreen> createState() => _CustomerDetailScreenState();
+}
+
+class _CustomerDetailScreenState extends State<CustomerDetailScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,190 +36,225 @@ class CustomerDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(customer.name),
+        title: Text(widget.customer.name),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // TODO: Edit Customer Dialog
+               // Update Customer logic (TODO)
+               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Edit Customer TODO')));
             },
           )
         ],
       ),
       body: Column(
         children: [
-          // Balance Card
-          _buildBalanceCard(context, db),
-          
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Align(
-              alignment: Alignment.centerLeft, 
-              child: Text('Transaction History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
+          // Balance Card Header
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+            ),
+            child: Column(
+              children: [
+                const Text('Total Due Amount', style: TextStyle(color: Colors.white70)),
+                const SizedBox(height: 8),
+                StreamBuilder<List<CustomerModel>>(
+                  stream: db.getCustomers(), // Re-fetch to get live balance updates
+                  builder: (context, snapshot) {
+                     final current = snapshot.data?.firstWhere(
+                       (c) => c.id == widget.customer.id, 
+                       orElse: () => widget.customer
+                     ) ?? widget.customer;
+
+                     return Text(
+                      '₹ ${current.totalDue.toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
+                    );
+                  }
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppTheme.primary),
+                      icon: const Icon(Icons.payment),
+                      label: const Text('Receive Payment'),
+                      onPressed: () => _showAddPaymentDialog(context),
+                    ),
+                    const SizedBox(width: 16),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
+                      icon: const Icon(Icons.history),
+                      label: const Text('Send Reminder'),
+                      onPressed: () {
+                        // TODO: WhatsApp integration
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reminder Logic TODO')));
+                      },
+                    ),
+                  ],
+                )
+              ],
             ),
           ),
           
+          ListTile(
+            title: Text(widget.customer.phone),
+            subtitle: Text(widget.customer.address),
+            leading: const Icon(Icons.person_pin, color: AppTheme.primary),
+          ),
+          
+          const Divider(),
+
+          // Transactions Tabs
+          TabBar(
+            controller: _tabController,
+            labelColor: AppTheme.primary,
+            unselectedLabelColor: Colors.grey,
+            tabs: const [
+              Tab(text: 'All'),
+              Tab(text: 'Orders (Debit)'),
+              Tab(text: 'Payments (Credit)'),
+            ],
+          ),
+
           Expanded(
             child: StreamBuilder<List<CustomerPaymentModel>>(
-              stream: db.getCustomerPayments(customer.id),
+              stream: db.getCustomerPayments(widget.customer.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                final logs = snapshot.data ?? [];
                 
-                if (logs.isEmpty) {
-                  return const Center(child: Text('No transactions yet.', style: TextStyle(color: Colors.grey)));
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: logs.length,
-                  itemBuilder: (context, index) {
-                    final log = logs[index];
-                    final isCredit = log.type == 'Credit'; // Order (Adding to Debt)
-                    
-                    return Card(
-                      elevation: 0,
-                      color: Colors.white,
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isCredit ? Colors.red.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
-                          child: Icon(
-                            isCredit ? Icons.shopping_bag : Icons.attach_money, 
-                            color: isCredit ? Colors.red : Colors.green,
-                            size: 18
-                          ),
-                        ),
-                        title: Text(isCredit ? 'Order via POS' : 'Payment Received'),
-                        subtitle: Text(DateFormat.yMMMd().add_jm().format(log.date)),
-                        trailing: Text(
-                          '${isCredit ? '+' : '-'} ₹${log.amount.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            color: isCredit ? Colors.red : Colors.green,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                final allTransactions = snapshot.data ?? [];
+                
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildTransactionList(allTransactions, null),
+                    _buildTransactionList(allTransactions, 'Credit'),
+                    _buildTransactionList(allTransactions, 'Debit'),
+                  ],
                 );
               },
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddPaymentDialog(context, db),
-        label: const Text('Receive Payment'),
-        icon: const Icon(Icons.add),
-        backgroundColor: Colors.green,
-      ),
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context, DatabaseService db) {
-    // We retrieve the latest customer object from stream to ensure balance updates dynamically
-    return StreamBuilder<List<CustomerModel>>(
-      stream: db.getCustomers(), // Not efficient but works for now. Better to get single doc stream.
-      builder: (context, snapshot) {
-        final freshCustomer = snapshot.data?.firstWhere((c) => c.id == customer.id, orElse: () => customer) ?? customer;
+  Widget _buildTransactionList(List<CustomerPaymentModel> all, String? filterType) {
+    // Note: Model uses 'Credit' for Order (Customer Debt Increases) and 'Debit' for Payment (Debt Decreases).
+    // Or vice versa depending on perspective.
+    // In DatabaseService.addPayment: 
+    // "If 'Credit' (Order), Debt Increases (+ amount). If 'Debit' (Payment Received), Debt Decreases (- amount)"
+    // So 'Credit' = Sales, 'Debit' = Received.
+
+    final filtered = filterType == null ? all : all.where((t) => t.type == filterType).toList();
+
+    if (filtered.isEmpty) {
+      return Center(child: Text('No ${filterType?.toLowerCase() ?? ''} transactions found.', style: TextStyle(color: Colors.grey[400])));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        final item = filtered[index];
+        final isOrder = item.type == 'Credit'; // Order increases debt
         
-        return Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primary.withValues(alpha: 0.8)]),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))],
-          ),
-          child: Column(
-            children: [
-              const Text('Current Balance Due', style: TextStyle(color: Colors.white70, fontSize: 14)),
-              const SizedBox(height: 8),
-              Text(
-                '₹${freshCustomer.totalDue.toStringAsFixed(0)}', 
-                style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)
+        return Card(
+          elevation: 0,
+          color: isOrder ? Colors.red[50] : Colors.green[50], // Red for debt increase, Green for payment
+          margin: const EdgeInsets.only(bottom: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isOrder ? Colors.red.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
+              child: Icon(
+                isOrder ? Icons.shopping_cart : Icons.attach_money, 
+                color: isOrder ? Colors.red : Colors.green
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Last Transaction: ${DateFormat.yMMMd().format(freshCustomer.lastTransactionDate)}',
-                style: const TextStyle(color: Colors.white60, fontSize: 12),
+            ),
+            title: Text(
+              isOrder ? 'Order #${item.orderId ?? 'N/A'}' : 'Payment Received',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
+              style: TextStyle(color: Colors.grey[700], fontSize: 12),
+            ),
+            trailing: Text(
+              '${isOrder ? '+' : '-'} ₹${item.amount.toStringAsFixed(0)}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16, 
+                color: isOrder ? Colors.red : Colors.green
               ),
-              const SizedBox(height: 16),
-              if (freshCustomer.phone.isNotEmpty)
-                ActionChip(
-                  label: Text('Call ${freshCustomer.phone}'),
-                  avatar: const Icon(Icons.call, size: 16),
-                  onPressed: () {
-                    // Launch dialer
-                  },
-                  backgroundColor: Colors.white,
-                )
-            ],
+            ),
+            onTap: () {
+               // Show details?
+            },
           ),
         );
-      }
+      },
     );
   }
 
-  void _showAddPaymentDialog(BuildContext context, DatabaseService db) {
+  void _showAddPaymentDialog(BuildContext context) {
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
-    
-    showModalBottomSheet(
+
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 24, right: 24, top: 24),
-        child: Column(
+      builder: (context) => AlertDialog(
+        title: const Text('Receive Payment'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Receive Payment', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
             TextField(
-              controller: amountCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Amount Received (₹)', border: OutlineInputBorder(), prefixText: '₹ '),
-              autofocus: true,
+              controller: amountCtrl, 
+              keyboardType: TextInputType.number, 
+              decoration: const InputDecoration(labelText: 'Amount Received (₹)', prefixIcon: Icon(Icons.currency_rupee))
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: noteCtrl,
-              decoration: const InputDecoration(labelText: 'Notes (Optional)', border: OutlineInputBorder()),
+              controller: noteCtrl, 
+              decoration: const InputDecoration(labelText: 'Notes (Optional)', prefixIcon: Icon(Icons.note))
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () async {
-                  if (amountCtrl.text.isEmpty) return;
-                  final amount = double.tryParse(amountCtrl.text) ?? 0;
-                  if (amount <= 0) return;
-
-                  final payment = CustomerPaymentModel(
-                    id: '', 
-                    customerId: customer.id, 
-                    amount: amount, 
-                    type: 'Debit', 
-                    date: DateTime.now(), 
-                    notes: noteCtrl.text
-                  );
-
-                  await db.addPayment(payment);
-                  if (context.mounted) Navigator.pop(context);
-                },
-                child: const Text('Confirm Payment', style: TextStyle(fontSize: 16, color: Colors.white)),
-              ),
-            ),
-            const SizedBox(height: 24),
           ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+            onPressed: () async {
+              if (amountCtrl.text.isEmpty) return;
+              
+              final amount = double.tryParse(amountCtrl.text) ?? 0;
+              if (amount <= 0) return;
+
+              final payment = CustomerPaymentModel(
+                id: '',
+                customerId: widget.customer.id,
+                amount: amount,
+                type: 'Debit', // Payment Reduces Debt
+                date: DateTime.now(),
+                notes: noteCtrl.text,
+              );
+
+              await Provider.of<DatabaseService>(context, listen: false).addPayment(payment);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
       ),
     );
   }
