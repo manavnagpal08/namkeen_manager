@@ -6,7 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   cloud_firestore
   file_selector_windows
   firebase_core
-  print_bluetooth_thermal
+  flutter_pos_printer_platform_image_3
   printing
 )
 

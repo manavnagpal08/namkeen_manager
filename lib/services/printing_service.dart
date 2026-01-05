@@ -1,12 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart'; // For rootBundle
-import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_pos_printer_platform_image_3/flutter_pos_printer_platform_image_3.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
-import 'package:image/image.dart' as img; // For image decoding
+import 'package:image/image.dart' as img;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'dart:convert';
 import '../models/order_model.dart';
 import '../models/batch_model.dart';
 import '../models/assignment_model.dart';
@@ -14,44 +15,81 @@ import '../models/employee_model.dart';
 import '../models/company_settings_model.dart';
 
 class PrintingService {
-  // Check permission
-  Future<bool> checkPermission() async {
-    return await PrintBluetoothThermal.isPermissionBluetoothGranted;
+  final PrinterManager _printerManager = PrinterManager.instance;
+  
+  // Singleton-like access to the currently connected device
+  static PrinterDevice? selectedDevice;
+  static PrinterType? selectedPrinterType;
+
+  // Scan for devices (Bluetooth or USB)
+  // Note: For USB on Android, it requires OTG and permission.
+  Stream<List<PrinterDevice>> get scanResults => _printerManager.scanResults;
+
+  Future<void> startScan(PrinterType type) async {
+    // Clear previous results? The lib handles it usually.
+    _printerManager.discovery(type: type, isBle: false); // Classic BT
   }
 
-  // Get Bonded Devices
-  Future<List<BluetoothInfo>> getBondedDevices() async {
-    if (kIsWeb) return []; 
-    return await PrintBluetoothThermal.pairedBluetooths;
+  Future<void> stopScan() async {
+    // No explicit stop needed usually, but good practice if available
   }
 
-  // Connect to device
-  Future<bool> connect(String macAddress) async {
-    if (kIsWeb) return false;
-    return await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
+  // Connect
+  Future<bool> connect(PrinterDevice device, PrinterType type) async {
+    try {
+      if (type == PrinterType.bluetooth) {
+         await _printerManager.connect(
+            type: type,
+            model: BluetoothPrinterInput(
+              name: device.name,
+              address: device.address!,
+              isBle: false,
+              autoConnect: true
+            ));
+      } else if (type == PrinterType.usb) {
+         await _printerManager.connect(
+            type: type,
+            model: UsbPrinterInput(
+               name: device.name,
+               productId: device.productId,
+               vendorId: device.vendorId,
+            ));
+      }
+      
+      selectedDevice = device;
+      selectedPrinterType = type;
+      return true;
+    } catch (e) {
+      debugPrint('PrintingService Connect Error: $e');
+      return false;
+    }
   }
 
   // Disconnect
   Future<bool> disconnect() async {
-    return await PrintBluetoothThermal.disconnect;
+    if (selectedPrinterType != null) {
+      await _printerManager.disconnect(type: selectedPrinterType!);
+      selectedDevice = null;
+      selectedPrinterType = null;
+      return true;
+    }
+    return false;
   }
 
   // Print Order (Thermal 58mm/80mm)
   Future<String> printOrderThermal(OrderModel order, CompanySettingsModel settings) async {
-    try {
-      bool isConnected = await PrintBluetoothThermal.connectionStatus;
-      if (!isConnected) {
-        return "Printer not connected";
-      }
+    if (selectedDevice == null || selectedPrinterType == null) {
+       return "Printer not connected";
+    }
 
+    try {
       final profile = await CapabilityProfile.load();
       // Use settings preference for paper size if available
       final paperSize = settings.useThermal80mm ? '80mm' : '58mm';
       final generator = Generator(paperSize == '80mm' ? PaperSize.mm80 : PaperSize.mm58, profile);
       List<int> bytes = [];
 
-      // Header
-      // Logo (if enabled)
+      // Header & Logo
       if (settings.showLogo) {
           try {
              Uint8List? imageBytes;
@@ -113,13 +151,15 @@ class PrintingService {
       bytes += generator.feed(2);
       bytes += generator.cut();
 
-      // Send bytes
-      await PrintBluetoothThermal.writeBytes(bytes);
+      // Send bytes via Manager
+      _printerManager.send(type: selectedPrinterType!, bytes: bytes);
       return "Printed Successfully";
     } catch (e) {
       return "Error printing: $e";
     }
   }
+
+
 
   // A4 PDF Invoice for Order
   Future<void> printOrderPDF(OrderModel order, CompanySettingsModel settings) async {

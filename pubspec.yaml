@@ -41,7 +41,8 @@ dependencies:
   google_fonts: ^6.3.2
   fl_chart: ^0.69.0
   # blue_thermal_printer removed due to incompatibility
-  print_bluetooth_thermal: ^1.1.9
+  # print_bluetooth_thermal: ^1.1.9 (Removed for unified USB/BT)
+  flutter_pos_printer_platform_image_3: ^1.0.6
   esc_pos_utils_plus: ^2.0.4
   pdf: ^3.11.3
   printing: ^5.14.2

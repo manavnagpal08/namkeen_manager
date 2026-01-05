@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:flutter_pos_printer_platform_image_3/flutter_pos_printer_platform_image_3.dart';
 import '../../core/namkeen_theme.dart';
 import '../../services/printing_service.dart';
 
@@ -10,25 +10,34 @@ class PrinterScanScreen extends StatefulWidget {
   State<PrinterScanScreen> createState() => _PrinterScanScreenState();
 }
 
-class _PrinterScanScreenState extends State<PrinterScanScreen> {
+class _PrinterScanScreenState extends State<PrinterScanScreen> with SingleTickerProviderStateMixin {
   final PrintingService _service = PrintingService();
-  List<BluetoothInfo> _devices = [];
-  bool _scanning = false;
+  late TabController _tabController;
+  PrinterType _selectedType = PrinterType.bluetooth;
 
   @override
   void initState() {
     super.initState();
-    _scan();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {
+          _selectedType = _tabController.index == 0 ? PrinterType.bluetooth : PrinterType.usb;
+        });
+        _service.startScan(_selectedType);
+      }
+    });
+
+    // Initial Scan
+    // Slight delay to ensure build? Not strictly needed usually.
+    _service.startScan(_selectedType);
   }
 
-  Future<void> _scan() async {
-    setState(() => _scanning = true);
-    // Get Paired Devices (Fastest)
-    final bonded = await _service.getBondedDevices();
-    setState(() {
-      _devices = bonded;
-      _scanning = false;
-    });
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _service.stopScan();
+    super.dispose();
   }
 
   @override
@@ -38,30 +47,86 @@ class _PrinterScanScreenState extends State<PrinterScanScreen> {
         title: const Text('Select Printer'),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(icon: Icon(Icons.bluetooth), text: 'Bluetooth'),
+            Tab(icon: Icon(Icons.usb), text: 'USB'),
+          ],
+        ),
         actions: [
-          if (_scanning) const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: Colors.white))),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _scan)
+          IconButton(
+            icon: const Icon(Icons.refresh), 
+            onPressed: () => _service.startScan(_selectedType)
+          )
         ],
       ),
-      body: ListView.builder(
-        itemCount: _devices.length,
-        itemBuilder: (context, index) {
-          final device = _devices[index];
-          return ListTile(
-            leading: const Icon(Icons.print, color: Colors.blueGrey),
-            title: Text(device.name),
-            subtitle: Text(device.macAdress),
-            onTap: () async {
-              // Try connecting
-              final success = await _service.connect(device.macAdress);
-              if (context.mounted) {
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connected to ${device.name}')));
-                  Navigator.pop(context, device);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connection Failed')));
-                }
-              }
+      body: StreamBuilder<List<PrinterDevice>>(
+        stream: _service.scanResults,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+             return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          
+          final devices = snapshot.data ?? [];
+          if (devices.isEmpty) {
+             return Center(child: Column(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+                 const Icon(Icons.search_off, size: 48, color: Colors.grey),
+                 const SizedBox(height: 16),
+                 Text('No ${_selectedType.name} printers found', style: const TextStyle(color: Colors.grey)),
+                 if (_selectedType == PrinterType.usb)
+                   const Padding(
+                     padding: EdgeInsets.all(8.0),
+                     child: Text('Note: Ensure printer is connected via OTG/USB and powered on.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+                   ),
+               ],
+             ));
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(12),
+            itemCount: devices.length,
+            separatorBuilder: (_, __) => const Divider(),
+            itemBuilder: (context, index) {
+              final device = devices[index];
+              return ListTile(
+                leading: Icon(
+                  _selectedType == PrinterType.bluetooth ? Icons.bluetooth : Icons.usb, 
+                  color: AppTheme.primary
+                ),
+                title: Text(device.name),
+                subtitle: Text(device.address ?? 'No Address'),
+                trailing: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+                  onPressed: () async {
+                    _service.stopScan();
+                    
+                    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+                    
+                    try {
+                      final success = await _service.connect(device, _selectedType);
+                      if (context.mounted) Navigator.pop(context); // Close loading
+
+                      if (context.mounted) {
+                        if (success) {
+                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connected to ${device.name}'), backgroundColor: Colors.green));
+                           Navigator.pop(context, device);
+                        } else {
+                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connection Failed'), backgroundColor: Colors.red));
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) Navigator.pop(context); 
+                    }
+                  },
+                  child: const Text('Connect'),
+                ),
+              );
             },
           );
         },

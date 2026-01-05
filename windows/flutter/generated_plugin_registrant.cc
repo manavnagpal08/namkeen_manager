@@ -9,7 +9,7 @@
 #include <cloud_firestore/cloud_firestore_plugin_c_api.h>
 #include <file_selector_windows/file_selector_windows.h>
 #include <firebase_core/firebase_core_plugin_c_api.h>
-#include <print_bluetooth_thermal/print_bluetooth_thermal_plugin_c_api.h>
+#include <flutter_pos_printer_platform_image_3/flutter_pos_printer_platform_plugin.h>
 #include <printing/printing_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
@@ -19,8 +19,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FileSelectorWindows"));
   FirebaseCorePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FirebaseCorePluginCApi"));
-  PrintBluetoothThermalPluginCApiRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("PrintBluetoothThermalPluginCApi"));
+  FlutterPosPrinterPlatformPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FlutterPosPrinterPlatformPlugin"));
   PrintingPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("PrintingPlugin"));
 }
