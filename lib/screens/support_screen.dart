@@ -22,8 +22,8 @@ class SupportScreen extends StatelessWidget {
     // Direct download links (GitHub automatically redirects 'latest' to the version tag)
     // Note: This relies on the consistent naming convention in release.yml
     // Direct download links
-    const String apkDownloadUrl = "$repoUrl/releases/latest/download/app-release.apk";
-    const String exeDownloadUrl = "$repoUrl/releases/latest/download/namkeen_manager.exe";
+    const String apkDownloadUrl = "$repoUrl/releases/latest/download/namkeen_manager.apk";
+    const String exeDownloadUrl = "$repoUrl/releases/latest/download/namkeen_manager_windows.zip";
 
     return Scaffold(
       appBar: AppBar(
