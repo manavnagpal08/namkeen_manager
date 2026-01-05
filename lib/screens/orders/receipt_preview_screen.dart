@@ -9,9 +9,10 @@ import '../settings/printer_scan_screen.dart';
 
 class ReceiptPreviewScreen extends StatelessWidget {
   final OrderModel order;
+  final VoidCallback? onReturn;
   final PrintingService _printingService = PrintingService();
 
-  ReceiptPreviewScreen({super.key, required this.order});
+  ReceiptPreviewScreen({super.key, required this.order, this.onReturn});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +30,9 @@ class ReceiptPreviewScreen extends StatelessWidget {
         title: const Text('Receipt Preview'),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
+        leading: onReturn != null 
+          ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: onReturn)
+          : null,
       ),
       body: Column(
         children: [

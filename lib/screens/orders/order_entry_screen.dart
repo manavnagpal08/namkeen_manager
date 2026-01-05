@@ -31,8 +31,30 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
   CustomerModel? _selectedCustomer; // Added
   double _currentGstRate = 12.0;
 
+  // New: Track completion for inline navigation
+  OrderModel? _completedOrder;
+
+  void _resetPos() {
+    setState(() {
+      _completedOrder = null;
+      _cart.clear();
+      _customerCtrl.clear();
+      _selectedCustomer = null;
+      _searchQuery = '';
+      _totalAmount = 0;
+      _subTotal = 0;
+      _gstAmount = 0;
+      _applyGst = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // If order completed, show receipt inline (preserves sidebar)
+    if (_completedOrder != null) {
+       return ReceiptPreviewScreen(order: _completedOrder!, onReturn: _resetPos);
+    }
+
     final db = Provider.of<DatabaseService>(context);
     
     // Using StreamBuilder to keep GST rate reactive
@@ -562,9 +584,11 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
       }
       
       if (mounted) {
+        FocusScope.of(context).unfocus();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order Saved & Stock Deducted!')));
-        Navigator.pop(context); 
-        Navigator.push(context, MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(order: order)));
+        setState(() {
+          _completedOrder = order;
+        });
       }
     } catch (e) {
       if (mounted) {
