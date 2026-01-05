@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart'; // For rootBundle
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:image/image.dart' as img; // For image decoding
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -45,6 +47,31 @@ class PrintingService {
       List<int> bytes = [];
 
       // Header
+      // Logo (if enabled)
+      if (settings.showLogo) {
+          try {
+             Uint8List? imageBytes;
+             if (settings.logoBase64 != null && settings.logoBase64!.isNotEmpty) {
+                 imageBytes = base64Decode(settings.logoBase64!);
+             } else {
+                 final byteData = await rootBundle.load('assets/images/logo.png');
+                 imageBytes = byteData.buffer.asUint8List();
+             }
+             
+             if (imageBytes != null) {
+                 final img.Image? image = img.decodeImage(imageBytes);
+                 if (image != null) {
+                     // Resize for thermal width
+                     final resized = img.copyResize(image, width: paperSize == '80mm' ? 500 : 350);
+                     bytes += generator.image(resized);
+                     bytes += generator.feed(1);
+                 }
+             }
+          } catch (e) {
+             debugPrint('Thermal Logo Error: $e');
+          }
+      }
+
       bytes += generator.text(settings.companyName.toUpperCase(),
           styles: const PosStyles(align: PosAlign.center, height: PosTextSize.size2, width: PosTextSize.size2, bold: true));
       bytes += generator.text(settings.address, styles: const PosStyles(align: PosAlign.center));
