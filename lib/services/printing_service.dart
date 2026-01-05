@@ -125,8 +125,8 @@ class PrintingService {
              // imageBytes is definitely assigned above
              final img.Image? image = img.decodeImage(imageBytes);
              if (image != null) {
-                 // Resize for thermal width
-                 final resized = img.copyResize(image, width: paperSize == '80mm' ? 500 : 350);
+                 // Resize for thermal width (Multiple of 24 per SDK requirement)
+                 final resized = img.copyResize(image, width: paperSize == '80mm' ? 504 : 360);
                  bytes += generator.image(resized);
                  bytes += generator.feed(1);
              }
