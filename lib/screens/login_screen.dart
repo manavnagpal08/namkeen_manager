@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/glass_container.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
@@ -161,9 +162,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 12),
 
                       // Footer
+                      // Footer
+                      const SizedBox(height: 20),
                       const Text(
-                        "Only authorized staff can access",
-                        style: TextStyle(color: Colors.white38, fontSize: 12),
+                        "Support: Manav Nagpal",
+                        style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                         onTap: () => launchUrl(Uri.parse("tel:+919896817707")),
+                         child: const Text(
+                           "+91 98968 17707",
+                           style: TextStyle(color: Colors.orangeAccent, fontSize: 13, decoration: TextDecoration.underline),
+                         ),
+                      ),
+                      const SizedBox(height: 4),
+                       const Text(
+                        "manav.nagpal2005@gmail.com",
+                        style: TextStyle(color: Colors.white38, fontSize: 11),
                       ),
                     ],
                   ),
