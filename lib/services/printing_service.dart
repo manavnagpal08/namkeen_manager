@@ -23,15 +23,37 @@ class PrintingService {
 
   // Scan for devices (Bluetooth or USB)
   // Note: For USB on Android, it requires OTG and permission.
-  Stream<List<PrinterDevice>> get scanResults => _printerManager.scanResults;
+  // Scan Stream Logic
+  final StreamController<List<PrinterDevice>> _scanController = StreamController<List<PrinterDevice>>.broadcast();
+  StreamSubscription? _scanSubscription;
+
+  Stream<List<PrinterDevice>> get scanResults => _scanController.stream;
 
   Future<void> startScan(PrinterType type) async {
-    // Clear previous results? The lib handles it usually.
-    _printerManager.discovery(type: type, isBle: false); // Classic BT
+    _scanSubscription?.cancel();
+    List<PrinterDevice> currentDevices = [];
+    _scanController.add([]); 
+
+    // discovery returns a Stream<PrinterDevice>
+    _scanSubscription = _printerManager.discovery(type: type, isBle: false).listen((device) {
+         // Basic de-duplication
+         final alreadyExists = currentDevices.any((d) {
+             if (d.address != null && device.address != null) {
+                 return d.address == device.address;
+             }
+             return d.name == device.name;
+         });
+
+         if (!alreadyExists) {
+             currentDevices.add(device);
+             _scanController.add(List.from(currentDevices));
+         }
+    });
   }
 
   Future<void> stopScan() async {
-    // No explicit stop needed usually, but good practice if available
+    _scanSubscription?.cancel();
+    _scanSubscription = null;
   }
 
   // Connect
