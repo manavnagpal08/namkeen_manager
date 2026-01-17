@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/batch_model.dart';
 import '../../models/product_model.dart';
+import '../../models/product_size_model.dart';
 import '../../models/employee_model.dart';
 import '../../models/recipe_model.dart';
 import '../../services/database_service.dart';
@@ -167,6 +168,7 @@ class ProductionScreen extends StatelessWidget {
     String? selectedProductName; // Track name for code generation
     String? selectedRecipeId;
     String? selectedSupervisorId;
+    String? selectedSizeId;
     final qtyCtrl = TextEditingController(text: '100');
 
     showDialog(
@@ -221,8 +223,33 @@ class ProductionScreen extends StatelessWidget {
                       return DropdownButtonFormField<String>(
                         value: selectedRecipeId,
                         hint: const Text('Select Recipe'),
-                        items: recipes.map((r) => DropdownMenuItem(value: r.id, child: Text(r.name))).toList(),
+                        items: recipes.map<DropdownMenuItem<String>>((r) => DropdownMenuItem<String>(value: r.id, child: Text(r.name))).toList(),
                         onChanged: (val) => setState(() => selectedRecipeId = val),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  // Size Dropdown
+                  if (selectedProductId != null)
+                  StreamBuilder<List<ProductModel>>(
+                    stream: db.getProducts(),
+                    builder: (context, psnap) {
+                      final p = psnap.data?.firstWhere((element) => element.id == selectedProductId, orElse: () => ProductModel(id: '', name: '', categoryId: '', defaultSizeId: ''));
+                      if (p == null || p.id.isEmpty) return const SizedBox.shrink();
+                      
+                      return StreamBuilder<List<ProductSizeModel>>(
+                        stream: db.getSizes(), // We filter in memory for simplicity or use categoryId if getSizes supported it
+                        builder: (context, sSnap) {
+                          final sizes = (sSnap.data ?? []).where((s) => s.categoryId == p.categoryId).toList();
+                          if (sizes.isEmpty) return const Text('No sizes defined for this category.', style: TextStyle(fontSize: 10, color: Colors.orange));
+
+                          return DropdownButtonFormField<String>(
+                            value: selectedSizeId,
+                            hint: const Text('Select Packaging Size'),
+                            items: sizes.map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(value: s.id, child: Text(s.label))).toList(),
+                            onChanged: (val) => setState(() => selectedSizeId = val),
+                          );
+                        },
                       );
                     },
                   ),
@@ -235,7 +262,7 @@ class ProductionScreen extends StatelessWidget {
                       return DropdownButtonFormField<String>(
                         value: selectedSupervisorId,
                         hint: const Text('Select Supervisor'),
-                        items: employees.map((e) => DropdownMenuItem(value: e.id, child: Text(e.name))).toList(),
+                        items: employees.map<DropdownMenuItem<String>>((e) => DropdownMenuItem<String>(value: e.id, child: Text(e.name))).toList(),
                         onChanged: (val) => setState(() => selectedSupervisorId = val),
                       );
                     },
@@ -260,13 +287,13 @@ class ProductionScreen extends StatelessWidget {
                    final date = DateFormat('ddMMM').format(DateTime.now()).toUpperCase();
                    final time = DateFormat('HHmm').format(DateTime.now());
                    final code = '$pName-$date-$time';
-
+ 
                    final batch = BatchModel(
                      id: '', // Firestore gen
                      batchCode: code,
                      productId: selectedProductId!,
                      recipeId: selectedRecipeId ?? '',
-                     sizeId: 'Standard', // User can add size logic if needed
+                     sizeId: selectedSizeId ?? 'Standard', 
                      targetQuantityKg: double.tryParse(qtyCtrl.text) ?? 100,
                      status: 'In Progress',
                      startTime: DateTime.now(),

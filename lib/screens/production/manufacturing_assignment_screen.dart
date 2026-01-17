@@ -154,7 +154,7 @@ class _ManufacturingAssignmentScreenState extends State<ManufacturingAssignmentS
                                   child: DropdownButtonFormField<RawMaterialModel>(
                                     decoration: const InputDecoration(labelText: 'Material', isDense: true),
                                     value: selected,
-                                    items: allMaterials.map((m) => DropdownMenuItem(
+                                    items: allMaterials.map<DropdownMenuItem<RawMaterialModel>>((m) => DropdownMenuItem<RawMaterialModel>(
                                       value: m,
                                       child: Text('${m.name} (${m.storageLocation})', style: const TextStyle(fontSize: 13)),
                                     )).toList(),

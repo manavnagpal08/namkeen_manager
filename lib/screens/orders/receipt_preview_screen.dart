@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/namkeen_theme.dart';
 import '../../models/order_model.dart';
 import '../../services/printing_service.dart';
@@ -24,6 +25,9 @@ class ReceiptPreviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('ReceiptPreviewScreen: Building for Order ${order.id}');
+    debugPrint('ReceiptPreviewScreen: Settings found: ${settings.companyName}');
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Receipt Preview'),
@@ -169,45 +173,74 @@ class ReceiptPreviewScreen extends StatelessWidget {
                     onPressed: () => _printingService.printOrderPDF(order, settings),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                    icon: const Icon(Icons.print),
-                    label: const Text('Print Receipt'),
-                    onPressed: () async {
-                       final status = await _printingService.printOrderThermal(order, settings);
-                       if (context.mounted) {
-                          if (status == "Printer not connected") {
-                             showDialog(
-                               context: context,
-                               builder: (ctx) => AlertDialog(
-                                 title: const Text('Printer Disconnected'),
-                                 content: const Text('No thermal printer connected. Configure now?'),
-                                 actions: [
-                                   TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                                   ElevatedButton(
-                                     onPressed: () {
-                                       Navigator.pop(ctx);
-                                       Navigator.push(context, MaterialPageRoute(builder: (_) => const PrinterScanScreen()));
-                                     }, 
-                                     child: const Text('Connect Printer')
-                                   )
-                                 ],
-                               )
-                             );
-                          } else if (status.startsWith("Error")) {
-                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status), backgroundColor: Colors.red));
-                          } else {
-                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status), backgroundColor: Colors.green));
-                          }
-                       }
-                    },
+                if (!kIsWeb) ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      icon: const Icon(Icons.print),
+                      label: const Text('Print Receipt'),
+                      onPressed: () async {
+                         final status = await _printingService.printOrderThermal(order, settings);
+                         if (context.mounted) {
+                            if (status == "Printer not connected") {
+                               showDialog(
+                                 context: context,
+                                 builder: (ctx) => AlertDialog(
+                                   title: const Text('Printer Disconnected'),
+                                   content: const Text('No thermal printer connected. Configure now?'),
+                                   actions: [
+                                     TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                     ElevatedButton(
+                                       onPressed: () {
+                                         Navigator.pop(ctx);
+                                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PrinterScanScreen()));
+                                       }, 
+                                       child: const Text('Connect Printer')
+                                     )
+                                   ],
+                                 )
+                               );
+                            } else if (status.startsWith("Error")) {
+                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status), backgroundColor: Colors.red));
+                            } else {
+                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status), backgroundColor: Colors.green));
+                            }
+                         }
+                      },
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
-          )
+          ),
+          // Debug Info Section
+          if (true) // Toggle this or set to kDebugMode if preferred
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: ExpansionTile(
+                title: const Text('Debug Info', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    color: Colors.grey.shade100,
+                    width: double.infinity,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Order ID: ${order.id}'),
+                        Text('Customer: ${order.customerName}'),
+                        Text('Items count: ${order.items.length}'),
+                        Text('Total: ${order.totalAmount}'),
+                        Text('Settings Company: ${settings.companyName}'),
+                        Text('Logo Present: ${settings.logoBase64?.isNotEmpty == true}'),
+                        Text('isWeb: $kIsWeb'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

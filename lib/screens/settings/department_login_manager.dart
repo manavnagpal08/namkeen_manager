@@ -103,10 +103,10 @@ class DepartmentLoginManager extends StatelessWidget {
                  value: ['Admin', 'Supervisor', 'Worker', 'Dispatch', 'accounts'].contains(roleCtrl.text) ? roleCtrl.text : 'Worker',
                  decoration: const InputDecoration(labelText: 'Role'),
                  items: const [
-                   DropdownMenuItem(value: 'Admin', child: Text('Admin (Full Access)')),
-                   DropdownMenuItem(value: 'Supervisor', child: Text('Supervisor (Logs + Tasks)')),
-                   DropdownMenuItem(value: 'Worker', child: Text('Worker (Reference Only)')),
-                   DropdownMenuItem(value: 'Dispatch', child: Text('Dispatch Only')),
+                   DropdownMenuItem<String>(value: 'Admin', child: Text('Admin (Full Access)')),
+                   DropdownMenuItem<String>(value: 'Supervisor', child: Text('Supervisor (Logs + Tasks)')),
+                   DropdownMenuItem<String>(value: 'Worker', child: Text('Worker (Reference Only)')),
+                   DropdownMenuItem<String>(value: 'Dispatch', child: Text('Dispatch Only')),
                  ],
                  onChanged: (val) => roleCtrl.text = val!,
                )

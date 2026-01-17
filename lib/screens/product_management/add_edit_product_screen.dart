@@ -84,7 +84,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   return DropdownButtonFormField<String>(
                     value: _categoryId,
                     decoration: const InputDecoration(labelText: 'Category'),
-                    items: categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+                    items: categories.map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.name))).toList(),
                     onChanged: (val) => setState(() {
                       _categoryId = val;
                       _defaultSizeId = null; // Reset size selection if category changes
@@ -184,8 +184,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 DropdownButtonFormField<String>(
                   value: _defaultSizeId,
                   decoration: const InputDecoration(labelText: 'Default Size for Orders'),
-                  items: _selectedSizeIds.map((id) {
-                     return DropdownMenuItem(value: id, child: Text('Size ID: ...${id.substring(id.length - 4)}'));
+                  items: _selectedSizeIds.map<DropdownMenuItem<String>>((id) {
+                     return DropdownMenuItem<String>(value: id, child: Text('Size ID: ...${id.length > 4 ? id.substring(id.length - 4) : id}'));
                   }).toList(),
                    onChanged: (val) => setState(() => _defaultSizeId = val),
                  ),

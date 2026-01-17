@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'core/namkeen_theme.dart';
@@ -8,34 +9,57 @@ import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'firebase_options.dart';
 import 'screens/access_restricted_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'screens/update_app_screen.dart';
 
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
-// Replace all prints
-    debugPrint('🚀 APP STARTING...');
     
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('✅ Firebase Initialized');
+    // Initialize PackageInfo with fallback and timeout
+    String currentVersion = "1.0.0+1";
+    try {
+      if (kIsWeb) {
+        // Short timeout for web to avoid white screen hanging
+        final packageInfo = await PackageInfo.fromPlatform().timeout(
+          const Duration(seconds: 3),
+        );
+        currentVersion = "${packageInfo.version}+${packageInfo.buildNumber}";
+      } else {
+        final packageInfo = await PackageInfo.fromPlatform();
+        currentVersion = "${packageInfo.version}+${packageInfo.buildNumber}";
+      }
+    } catch (e) {
+      debugPrint("⚠️ PackageInfo failed to load: $e Using fallback version.");
+    }
+    
+    debugPrint('🚀 APP STARTING... Version: $currentVersion');
+    
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ).timeout(const Duration(seconds: 10)); // Timeout for Firebase Init
+      debugPrint('✅ Firebase Initialized');
+    } catch (e) {
+      debugPrint("🔴 Firebase Initialization Failed: $e");
+      // App might still work offline or show error, but we proceed to runApp
+    }
     
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      // Avoid printing complex objects which might cause type errors on Web JS interop
       debugPrint('🔴 FLUTTER ERROR: ${details.exception.toString()}');
     };
 
-    runApp(const NamkeenFactoryApp());
+    runApp(NamkeenFactoryApp(currentVersion: currentVersion));
     debugPrint('🚀 runApp called');
   }, (error, stack) {
-    // Avoid casting error to specific types
     debugPrint('🔴 CAUGHT ASYNC ERROR: ${error.toString()}');
   });
 }
 
 class NamkeenFactoryApp extends StatelessWidget {
-  const NamkeenFactoryApp({super.key});
+  final String currentVersion;
+  const NamkeenFactoryApp({super.key, required this.currentVersion});
 
   @override
   Widget build(BuildContext context) {
@@ -54,16 +78,25 @@ class NamkeenFactoryApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         home: const SplashScreen(),
         builder: (context, child) {
-          // Global Lock Gatekeeper
+          // Global Gatekeeper (Lock & Version)
           return StreamBuilder<Map<String, dynamic>>(
             stream: DatabaseService().getAppConfig(),
             builder: (context, snapshot) {
-              // While connecting, we show the app (or splash), but default is unlocked usually.
-              // If locked, we MUST show restricted screen.
               if (snapshot.hasData) {
                 final config = snapshot.data!;
+                
+                // 1. Lock Gatekeeper
                 if (config['is_locked'] == true) {
                    return AccessRestrictedScreen(config: config);
+                }
+
+                // 2. Version Gatekeeper (Only for Android/iOS)
+                final latestVersion = config['latest_version'];
+                if (!kIsWeb && latestVersion != null && _isVersionOlder(currentVersion, latestVersion)) {
+                  // If it's a force update, we return the Update Screen directly.
+                  // Otherwise, the child (app) continues and might show a dialog.
+                  // For simplicity: If new version exists, show update screen.
+                  return UpdateAppScreen(config: config, currentVersion: currentVersion);
                 }
               }
               return child!;
@@ -72,5 +105,19 @@ class NamkeenFactoryApp extends StatelessWidget {
         },
       ),
     );
+  }
+
+  bool _isVersionOlder(String current, String latest) {
+    try {
+      // Version format: 1.0.21+21 -> compare only the build number (the part after +)
+      // or compare the semver.
+      // Build number is usually safer for internal updates.
+      final currentBuild = int.parse(current.split('+').last);
+      final latestBuild = int.parse(latest.split('+').last);
+      return currentBuild < latestBuild;
+    } catch (e) {
+      // Fallback: simple string comparison if split fails
+      return current != latest;
+    }
   }
 }

@@ -239,9 +239,16 @@ class DatabaseService {
     });
   }
   
-  // Get specific config for a size
-  Future<PackingUnitModel?> getPackingConfigForSize(String sizeId) async {
-    final snapshot = await _packingUnits.where('sizeId', isEqualTo: sizeId).limit(1).get();
+  // Get specific config for a size (with optional category fallback)
+  Future<PackingUnitModel?> getPackingConfigForSize(String sizeId, {String? categoryId}) async {
+    // 1. Try Specific Size
+    var snapshot = await _packingUnits.where('sizeId', isEqualTo: sizeId).limit(1).get();
+    
+    // 2. Fallback to Category if size is Standard or not found
+    if (snapshot.docs.isEmpty && categoryId != null) {
+      snapshot = await _packingUnits.where('categoryId', isEqualTo: categoryId).limit(1).get();
+    }
+
     if (snapshot.docs.isNotEmpty) {
       return PackingUnitModel.fromMap(snapshot.docs.first.data() as Map<String, dynamic>, snapshot.docs.first.id);
     }

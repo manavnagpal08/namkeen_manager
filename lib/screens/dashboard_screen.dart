@@ -884,11 +884,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               
               try {
                 // 1. Update Assignment
-                await db.updateAssignment(task.copyWith(
+                final completedTask = task.copyWith(
                   status: 'Completed',
                   completedAt: DateTime.now(),
                   completedUnits: double.tryParse(qtyCtrl.text) ?? task.targetQuantity,
-                ));
+                );
+                await db.updateAssignment(completedTask);
 
                 // 2. Handle Logic Chain
                 if (task.type == 'Manufacturing') {
@@ -904,7 +905,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                        }
                        // Deduct raw materials
                        final stockService = StockService();
-                       await stockService.deductRawMaterialsForBatch(batch, actualProducedKg: task.completedUnits, usedMaterials: task.materialsUsed);
+                       await stockService.deductRawMaterialsForBatch(batch, actualProducedKg: completedTask.completedUnits, usedMaterials: task.materialsUsed);
                     }
                 } else if (task.type == 'Packaging') {
                     // Update Stock
@@ -917,7 +918,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     
                     if (batch.id.isNotEmpty) {
                        final config = await db.getPackingConfigForSize(batch.sizeId);
-                       await stockService.processPackagingCompletion(task, config);
+                       await stockService.processPackagingCompletion(completedTask, config);
                        
                        // Also update batch status if this was the last step
                        await db.updateBatch(batch.copyWith(status: 'Packaged'));

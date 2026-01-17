@@ -38,15 +38,15 @@ class _SizeListState extends State<SizeList> {
               stream: categoryStream,
               builder: (context, snapshot) {
                 final categories = snapshot.data ?? [];
-                return DropdownButtonFormField<String>(
+                return DropdownButtonFormField<String?>(
                   value: _selectedCategoryId,
                   decoration: const InputDecoration(
                     labelText: 'Filter by Category',
                     prefixIcon: Icon(Icons.filter_list),
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('All Categories')),
-                    ...categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
+                    const DropdownMenuItem<String?>(value: null, child: Text('All Categories')),
+                    ...categories.map<DropdownMenuItem<String?>>((c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name))),
                   ],
                   onChanged: (val) => setState(() => _selectedCategoryId = val),
                 );
@@ -129,7 +129,7 @@ class _SizeListState extends State<SizeList> {
                         return DropdownButtonFormField<String>(
                           value: categoryId,
                           decoration: const InputDecoration(labelText: 'Category'),
-                          items: categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+                          items: categories.map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.name))).toList(),
                           onChanged: (val) => setStateDialog(() => categoryId = val),
                         );
                       },

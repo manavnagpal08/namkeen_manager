@@ -31,7 +31,7 @@ class _AssignTaskDialogState extends State<AssignTaskDialog> {
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
               value: _taskType,
-              items: ['Manufacturing', 'Packaging'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+              items: ['Manufacturing', 'Packaging'].map<DropdownMenuItem<String>>((t) => DropdownMenuItem<String>(value: t, child: Text(t))).toList(),
               onChanged: (val) => setState(() => _taskType = val!),
               decoration: const InputDecoration(labelText: 'Task Type'),
             ),
@@ -43,7 +43,7 @@ class _AssignTaskDialogState extends State<AssignTaskDialog> {
                 return DropdownButtonFormField<String>(
                   value: _selectedEmployeeId,
                   hint: const Text('Select Employee'),
-                  items: employees.map((e) => DropdownMenuItem(value: e.id, child: Text('${e.name} (${e.role})'))).toList(),
+                  items: employees.map<DropdownMenuItem<String>>((e) => DropdownMenuItem<String>(value: e.id, child: Text('${e.name} (${e.role})'))).toList(),
                   onChanged: (val) => setState(() => _selectedEmployeeId = val),
                 );
               },

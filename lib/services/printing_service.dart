@@ -15,7 +15,7 @@ import '../models/employee_model.dart';
 import '../models/company_settings_model.dart';
 
 class PrintingService {
-  final PrinterManager _printerManager = PrinterManager.instance;
+  PrinterManager get _printerManager => PrinterManager.instance;
   
   // Singleton-like access to the currently connected device
   static PrinterDevice? selectedDevice;

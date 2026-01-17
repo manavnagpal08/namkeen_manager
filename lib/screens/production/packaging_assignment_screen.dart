@@ -7,6 +7,7 @@ import '../../models/assignment_model.dart';
 import '../../models/packing_unit_model.dart';
 import '../../models/raw_material_model.dart';
 import '../../services/database_service.dart';
+import '../../services/stock_service.dart';
 import '../../services/inventory_logic_service.dart';
 
 class PackagingAssignmentScreen extends StatefulWidget {
@@ -109,7 +110,7 @@ class _PackagingAssignmentScreenState extends State<PackagingAssignmentScreen> {
                         return DropdownButtonFormField<String>(
                           decoration: const InputDecoration(labelText: 'Select Packaging Staff'),
                           value: _selectedEmployeeId,
-                          items: employees.map((e) => DropdownMenuItem(value: e.id, child: Text(e.name))).toList(),
+                          items: employees.map<DropdownMenuItem<String>>((e) => DropdownMenuItem<String>(value: e.id, child: Text(e.name))).toList(),
                           onChanged: (val) => setState(() => _selectedEmployeeId = val),
                         );
                       },
@@ -166,7 +167,7 @@ class _PackagingAssignmentScreenState extends State<PackagingAssignmentScreen> {
                                           child: DropdownButtonFormField<RawMaterialModel>(
                                             decoration: const InputDecoration(labelText: 'Material', isDense: true),
                                             value: selected,
-                                            items: allMaterials.map((m) => DropdownMenuItem(
+                                            items: allMaterials.map<DropdownMenuItem<RawMaterialModel>>((m) => DropdownMenuItem<RawMaterialModel>(
                                               value: m,
                                               child: Text('${m.name} (${m.storageLocation})', style: const TextStyle(fontSize: 12)),
                                             )).toList(),
@@ -359,24 +360,13 @@ class _PackagingAssignmentScreenState extends State<PackagingAssignmentScreen> {
 
   Future<void> _processCompletion(AssignmentModel task, double actualQty, String zone) async {
     try {
-      // Lazy load service to avoid provider issues if not registered/imported top level
-      // Or just instantiate as it's stateless logic usually
-      final logic = InventoryLogicService(); 
+      final stockService = StockService(); 
       
-      await logic.completePackagingTask(
-        assignmentId: task.id,
-        actualProducedPackets: actualQty,
-        batchId: widget.batch.id,
-        batchCode: widget.batch.batchCode,
-        productId: widget.batch.productId,
-        sizeId: widget.batch.sizeId,
-        categoryId: 'Unknown', // Ideally BatchModel should have categoryId, or we fetch product. 
-                              // For MVP we assume we can fetch or pass it. 
-                              // Let's pass 'LookupNeeded' or fix BatchModel.
-        employeeId: task.employeeId,
-        packingConfig: _config,
-        storageAreaId: zone,
-      );
+      // We pass a copy of the task with the actual quantity entered 
+      // so the service can calculate boxes correctly.
+      final updTask = task.copyWith(completedUnits: actualQty);
+
+      await stockService.processPackagingCompletion(updTask, _config);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Stock moved to Warehouse!')));

@@ -103,7 +103,7 @@ class StockService {
 
   // 2. Process Packaging Completion -> Add to Warehouse -> Deduct from Batch Output
   Future<void> processPackagingCompletion(AssignmentModel assignment, PackingUnitModel? config) async {
-    if (assignment.type != 'Packaging' || assignment.status != 'Completed') return;
+    if (assignment.type != 'Packaging') return;
 
     // Get Batch
     final batchRef = _db.collection('batches').doc(assignment.batchId);
@@ -111,28 +111,45 @@ class StockService {
     if (!batchSnap.exists) return;
     final batch = BatchModel.fromMap(batchSnap.id, batchSnap.data()!);
 
+    // Refine Config if null (Fallback to Category)
+    PackingUnitModel? finalConfig = config;
+    if (finalConfig == null) {
+      final productSnap = await _db.collection('products').doc(batch.productId).get();
+      if (productSnap.exists) {
+        final categoryId = productSnap.data()?['category_id'] ?? '';
+        finalConfig = await _db.collection('packing_units')
+            .where('sizeId', isEqualTo: batch.sizeId)
+            .limit(1).get().then((q) => q.docs.isNotEmpty ? PackingUnitModel.fromMap(q.docs.first.data(), q.docs.first.id) : null);
+        
+        if (finalConfig == null && categoryId.isNotEmpty) {
+           finalConfig = await _db.collection('packing_units')
+              .where('categoryId', isEqualTo: categoryId)
+              .limit(1).get().then((q) => q.docs.isNotEmpty ? PackingUnitModel.fromMap(q.docs.first.data(), q.docs.first.id) : null);
+        }
+      }
+    }
+
     // Calculate Units
-    // Fix: Use actual completed units if available (user requested fast/perfect logic)
     double packets = (assignment.completedUnits > 0) ? assignment.completedUnits : assignment.targetQuantity;
     double boxes = 0;
     double cartons = 0;
 
-    if (config != null && config.packetsPerBox > 0) {
-       boxes = (packets / config.packetsPerBox).floorToDouble();
-       if (config.boxesPerMasterCarton > 0) {
-         cartons = (boxes / config.boxesPerMasterCarton).floorToDouble();
+    if (finalConfig != null && finalConfig.packetsPerBox > 0) {
+       boxes = (packets / finalConfig.packetsPerBox).floorToDouble();
+       if (finalConfig.boxesPerMasterCarton > 0) {
+         cartons = (boxes / finalConfig.boxesPerMasterCarton).floorToDouble();
        }
     }
 
     // Add to Warehouse Stock
-    final warehouseRef = _db.collection('warehouse_stock').doc(); // New entry or merge?
-    // For simplicity, adding new entry per batch-packaging run
+    final warehouseRef = _db.collection('warehouse_stock').doc(); 
     final stock = WarehouseStockModel(
       id: warehouseRef.id,
       productId: batch.productId,
-      categoryId: config?.categoryId ?? '',
+      categoryId: finalConfig?.categoryId ?? '',
       sizeId: batch.sizeId,
       batchId: batch.id,
+      batchCode: batch.batchCode,
       quantityPackets: packets,
       quantityBoxes: boxes,
       quantityMasterCartons: cartons, 
@@ -143,9 +160,29 @@ class StockService {
     );
 
     // Update DB
-    await _db.collection('warehouse_stock').add(stock.toMap());
+    final batchDb = _db.batch();
     
-    // Here we could also deduct from "Loose Batch Stock" if we were tracking that separately.
+    // 1. Mark Assignment Completed
+    batchDb.update(_db.collection('assignments').doc(assignment.id), {
+      'status': 'Completed',
+      'completed_units': packets,
+      'completed_at': FieldValue.serverTimestamp(),
+    });
+
+    // 2. Add Warehouse Stock
+    batchDb.set(warehouseRef, stock.toMap());
+
+    // 3. Update Batch (Increment Packed Quantity)
+    batchDb.update(batchRef, {
+      'packed_quantity_kg': FieldValue.increment(packets),
+    });
+
+    await batchDb.commit();
+
+    // 4. Deduct Packaging Materials (Sequential call as it has its own transaction/logic)
+    if (assignment.materialsUsed.isNotEmpty) {
+      await deductRawMaterialsForBatch(batch, usedMaterials: assignment.materialsUsed);
+    }
   }
 
   // 3. Forecast Stock Days Remaining

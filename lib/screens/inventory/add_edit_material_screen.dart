@@ -32,9 +32,9 @@ class _AddEditMaterialScreenState extends State<AddEditMaterialScreen> {
     _nameController = TextEditingController(text: widget.material?.name ?? '');
     _currentStockController = TextEditingController(text: widget.material?.currentStock.toString() ?? '0');
     _costController = TextEditingController(text: widget.material?.costPerUnit.toString() ?? '0');
-    _supplierController = TextEditingController(text: ''); // Removed from model
+    _supplierController = TextEditingController(text: widget.material?.supplierName ?? ''); 
     _thresholdController = TextEditingController(text: widget.material?.minimumThreshold.toString() ?? '10');
-    _locationController = TextEditingController(text: ''); // Removed from model
+    _locationController = TextEditingController(text: widget.material?.storageLocation ?? ''); 
     _unit = widget.material?.unit ?? 'kg';
     _expiryDate = widget.material?.expiryDate;
   }
@@ -66,10 +66,10 @@ class _AddEditMaterialScreenState extends State<AddEditMaterialScreen> {
                 value: _unit,
                 decoration: const InputDecoration(labelText: 'Unit'),
                 items: const [
-                  DropdownMenuItem(value: 'kg', child: Text('Kilograms (kg)')),
-                  DropdownMenuItem(value: 'litre', child: Text('Litres (L)')),
-                  DropdownMenuItem(value: 'pack', child: Text('Packets (pcs)')),
-                  DropdownMenuItem(value: 'tin', child: Text('Tin')),
+                  DropdownMenuItem<String>(value: 'kg', child: Text('Kilograms (kg)')),
+                  DropdownMenuItem<String>(value: 'litre', child: Text('Litres (L)')),
+                  DropdownMenuItem<String>(value: 'pack', child: Text('Packets (pcs)')),
+                  DropdownMenuItem<String>(value: 'tin', child: Text('Tin')),
                 ],
                 onChanged: (val) => setState(() => _unit = val!),
               ),

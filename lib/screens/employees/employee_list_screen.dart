@@ -75,7 +75,7 @@ class EmployeeListScreen extends StatelessWidget {
                   value: role,
                   decoration: const InputDecoration(labelText: 'Role'),
                   items: ['Worker', 'Supervisor', 'Mixing', 'Frying', 'Packing', 'Dispatch', 'Inventory']
-                      .map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                      .map<DropdownMenuItem<String>>((r) => DropdownMenuItem<String>(value: r, child: Text(r))).toList(),
                   onChanged: (val) => setState(() => role = val!),
                 )
               ],

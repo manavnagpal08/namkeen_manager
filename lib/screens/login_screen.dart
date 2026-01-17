@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             hint: const Text("Select Department", style: TextStyle(fontSize: 14)),
                             isExpanded: true,
                             items: deptNames
-                                .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                                .map<DropdownMenuItem<String>>((d) => DropdownMenuItem<String>(value: d, child: Text(d)))
                                 .toList(),
                             onChanged: (val) => setState(() => _selectedDept = val),
                             dropdownColor: Colors.black87,

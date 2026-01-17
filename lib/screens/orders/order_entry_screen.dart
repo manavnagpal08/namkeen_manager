@@ -50,7 +50,7 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-
+    debugPrint('OrderEntryScreen: Building. CompletedOrder=${_completedOrder != null}');
     final db = Provider.of<DatabaseService>(context);
     return StreamBuilder<CompanySettingsModel>(
       stream: db.getCompanySettings(),
@@ -151,7 +151,7 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
                   stream: db.getCategories(),
                   builder: (context, catSnap) {
                     final categories = catSnap.data ?? [];
-                    return DropdownButtonFormField<String>(
+                    return DropdownButtonFormField<String?>(
                       value: _selectedCategory,
                       decoration: InputDecoration(
                         hintText: 'Category',
@@ -161,8 +161,8 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                       ),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('All')),
-                        ...categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
+                        const DropdownMenuItem<String?>(value: null, child: Text('All')),
+                        ...categories.map<DropdownMenuItem<String?>>((c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name))),
                       ],
                       onChanged: (val) => setState(() => _selectedCategory = val),
                     );

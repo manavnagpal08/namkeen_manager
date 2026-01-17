@@ -50,7 +50,7 @@ class _ManagePackingScreenState extends State<ManagePackingScreen> {
                 return DropdownButtonFormField<String>(
                   value: _selectedCategory,
                   decoration: const InputDecoration(labelText: 'Select Category'),
-                  items: snapshot.data!.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+                  items: snapshot.data!.map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.name))).toList(),
                   onChanged: (val) {
                     setState(() {
                       _selectedCategory = val;
@@ -74,7 +74,7 @@ class _ManagePackingScreenState extends State<ManagePackingScreen> {
                   return DropdownButtonFormField<String>(
                     value: _selectedSize,
                     decoration: const InputDecoration(labelText: 'Select Size / Weight'),
-                    items: snapshot.data!.map((s) => DropdownMenuItem(value: s.id, child: Text(s.label))).toList(),
+                    items: snapshot.data!.map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(value: s.id, child: Text(s.label))).toList(),
                     onChanged: (val) {
                       setState(() => _selectedSize = val);
                       _loadExistingConfig(db);
