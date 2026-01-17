@@ -101,77 +101,124 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
     final contact = widget.config['developer_contact'] ?? 'Contact Admin';
 
     return Scaffold(
-      backgroundColor: Colors.red[900],
-      body: SafeArea(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.lock_outline, size: 80, color: Colors.white),
-              const SizedBox(height: 24),
-              const Text(
-                'ACCESS RESTRICTED',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'For Access Contact:',
-                      style: TextStyle(color: Colors.white60, fontSize: 12),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      contact,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF8B0000), Color(0xFF2B0000)], // Deep Red Gradient
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_rounded, size: 80, color: Colors.white24),
+                const SizedBox(height: 24),
+                
+                // Alert Card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white12),
+                    boxShadow: [
+                       BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'ACCESS RESTRICTED',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 3,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              // Hidden Admin Access (Long Press or Subtle Button)
-              GestureDetector(
-                onLongPress: _showAdminPanel, // Secret Long Press
-                onDoubleTap: _showAdminPanel, // Or Double Tap
-                child: TextButton.icon(
-                  onPressed: _showAdminPanel, 
-                  icon: Icon(Icons.admin_panel_settings, color: Colors.white.withOpacity(0.3)),
-                  label: Text(
-                    'Admin Access', 
-                    style: TextStyle(color: Colors.white.withOpacity(0.3))
+                      const SizedBox(height: 16),
+                      Text(
+                        message,
+                        style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.5),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+
+                const Spacer(),
+
+                // Contact Details
+                const Text(
+                  'Contact Administrator',
+                  style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1),
+                ),
+                const SizedBox(height: 16),
+                
+                _buildContactCard(
+                  name: 'Manav Nagpal',
+                  email: 'manav.nagpal2005@gmail.com',
+                  phone: '+91 98968 17707',
+                ),
+
+                const Spacer(),
+
+                // Admin Unlock Button
+                TextButton.icon(
+                  onPressed: _showAdminPanel,
+                  icon: const Icon(Icons.admin_panel_settings_outlined, color: Colors.white30),
+                  label: const Text('Admin Unlock', style: TextStyle(color: Colors.white30)),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-}
+
+  Widget _buildContactCard({required String name, required String email, required String phone}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.black26,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        children: [
+          Text(
+            name,
+            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Divider(color: Colors.white10, thickness: 1),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.phone, color: Colors.greenAccent, size: 18),
+              const SizedBox(width: 8),
+              Text(phone, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.email, color: Colors.orangeAccent, size: 18),
+              const SizedBox(width: 8),
+              Text(email, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
+        ],
+      ),
+    );
