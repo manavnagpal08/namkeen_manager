@@ -483,4 +483,24 @@ class DatabaseService {
   Future<void> saveCompanySettings(CompanySettingsModel settings) async {
     await _settingsRef.doc('company_profile').set(settings.toMap());
   }
+
+  // --- App Config (License/Lock) ---
+  Stream<Map<String, dynamic>> getAppConfig() {
+    return _settingsRef.doc('app_config').snapshots().map((doc) {
+      if (doc.exists && doc.data() != null) {
+        return doc.data() as Map<String, dynamic>;
+      }
+      // Default Config (Unlocked)
+      return {
+        'is_locked': false,
+        'lock_message': 'Trial Period Expired. Please contact the administrator.',
+        'admin_pin': '8008', // Default PIN (BOOB?) User asked for "some pin". I'll set a standard one.
+        'developer_contact': 'Contact Admin for Access',
+      };
+    });
+  }
+
+  Future<void> updateAppLockStatus(bool isLocked) async {
+    await _settingsRef.doc('app_config').set({'is_locked': isLocked}, SetOptions(merge: true));
+  }
 }

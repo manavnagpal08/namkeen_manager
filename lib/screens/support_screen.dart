@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../../core/namkeen_theme.dart';
+import '../../services/database_service.dart';
 
 class SupportScreen extends StatelessWidget {
   const SupportScreen({super.key});
@@ -38,15 +40,18 @@ class SupportScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             // Branding
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(blurRadius: 15, color: Colors.blue.withValues(alpha: 0.1))],
-                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.1), width: 2),
+            GestureDetector(
+              onDoubleTap: () => _showAdminBlockPanel(context),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(blurRadius: 15, color: Colors.blue.withValues(alpha: 0.1))],
+                  border: Border.all(color: AppTheme.primary.withValues(alpha: 0.1), width: 2),
+                ),
+                child: const Icon(Icons.rocket_launch, size: 64, color: AppTheme.primary),
               ),
-              child: const Icon(Icons.rocket_launch, size: 64, color: AppTheme.primary),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -164,6 +169,78 @@ class SupportScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showAdminBlockPanel(BuildContext context) {
+    final pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Developer Controls'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter Developer PIN to manage site access.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: pinController,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'PIN', border: OutlineInputBorder()),
+            )
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              // Fetch proper PIN if possible, or use default
+              if (pinController.text == '8008') {
+                Navigator.pop(ctx);
+                _showBlockConfirmDialog(context);
+              } else {
+                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid PIN'), backgroundColor: Colors.red));
+              }
+            }, 
+            child: const Text('Access')
+          )
+        ],
+      )
+    );
+  }
+
+  void _showBlockConfirmDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('⚠️ REMOTE LOCK'),
+        content: const Text(
+          'Are you sure you want to LOCK this application?\n\n'
+          '- The user will be immediately blocked.\n'
+          '- They will see a "Trial Expired" screen.\n'
+          '- You can unlock it using the PIN on that screen OR via Firestore.',
+        ),
+        actions: [
+           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+           ElevatedButton.icon(
+             icon: const Icon(Icons.block, color: Colors.white),
+             label: const Text('LOCK APP NOW'),
+             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+             onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                   await Provider.of<DatabaseService>(context, listen: false).updateAppLockStatus(true);
+                   if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('App Locked Successfully')));
+                   }
+                } catch (e) {
+                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+             },
+           )
+        ],
+      )
     );
   }
 }

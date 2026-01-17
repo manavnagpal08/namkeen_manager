@@ -7,6 +7,7 @@ import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'firebase_options.dart';
+import 'screens/access_restricted_screen.dart';
 
 void main() async {
   runZonedGuarded(() async {
@@ -52,6 +53,23 @@ class NamkeenFactoryApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const SplashScreen(),
+        builder: (context, child) {
+          // Global Lock Gatekeeper
+          return StreamBuilder<Map<String, dynamic>>(
+            stream: DatabaseService().getAppConfig(),
+            builder: (context, snapshot) {
+              // While connecting, we show the app (or splash), but default is unlocked usually.
+              // If locked, we MUST show restricted screen.
+              if (snapshot.hasData) {
+                final config = snapshot.data!;
+                if (config['is_locked'] == true) {
+                   return AccessRestrictedScreen(config: config);
+                }
+              }
+              return child!;
+            },
+          );
+        },
       ),
     );
   }

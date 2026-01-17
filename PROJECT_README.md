@@ -4,7 +4,6 @@
 **Namkeen Manager** is a comprehensive ERP (Enterprise Resource Planning) system built specifically for a Namkeen/Snack manufacturing factory. It digitizes the entire lifecycle of the business, from buying raw materials (Besan, Oil) to manufacturing batches (Frying, Mixing), packaging them into packets/boxes, and finally selling them to distributors.
 
 ---
-
 ## 2. Core Modules & Features
 
 ### A. Inventory Management
