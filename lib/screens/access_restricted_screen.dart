@@ -169,12 +169,16 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
                 const Spacer(),
 
                 // Admin Unlock Button
-                TextButton.icon(
-                  onPressed: _showAdminPanel,
-                  icon: const Icon(Icons.admin_panel_settings_outlined, color: Colors.white30),
-                  label: const Text('Admin Unlock', style: TextStyle(color: Colors.white30)),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                GestureDetector(
+                  onDoubleTap: _showAdminPanel,
+                  onLongPress: _showAdminPanel,
+                  child: TextButton.icon(
+                    onPressed: _showAdminPanel,
+                    icon: const Icon(Icons.admin_panel_settings_outlined, color: Colors.white30),
+                    label: const Text('Admin Unlock', style: TextStyle(color: Colors.white30)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
                   ),
                 ),
               ],
