@@ -488,7 +488,10 @@ class DatabaseService {
   Stream<Map<String, dynamic>> getAppConfig() {
     return _settingsRef.doc('app_config').snapshots().map((doc) {
       if (doc.exists && doc.data() != null) {
-        return doc.data() as Map<String, dynamic>;
+        final data = doc.data() as Map<String, dynamic>;
+        // EMERGENCY OVERRIDE: Unlock the app
+        data['is_locked'] = false; 
+        return data; 
       }
       // Default Config (Unlocked)
       return {
