@@ -109,84 +109,96 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
             colors: [Color(0xFF8B0000), Color(0xFF2B0000)], // Deep Red Gradient
           ),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.lock_rounded, size: 80, color: Colors.white24),
-                const SizedBox(height: 24),
-                
-                // Alert Card
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white12),
-                    boxShadow: [
-                       BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onLongPress: _showAdminPanel,
-                        child: const Text(
-                          'ACCESS RESTRICTED',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 3,
+        child: Stack(
+          children: [
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_rounded, size: 80, color: Colors.white24),
+                    const SizedBox(height: 24),
+                    
+                    // Alert Card
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white12),
+                        boxShadow: [
+                           BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onLongPress: _showAdminPanel,
+                            child: const Text(
+                              'ACCESS RESTRICTED',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 3,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
+                          const SizedBox(height: 16),
+                          Text(
+                            message,
+                            style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.5),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // Contact Details
+                    const Text(
+                      'Contact Administrator',
+                      style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    _buildContactCard(
+                      name: 'Manav Nagpal',
+                      email: 'manav.nagpal2005@gmail.com',
+                      phone: '+91 98968 17707',
+                    ),
+
+                    const Spacer(),
+
+                    // Admin Unlock Button - VISIBLE & STANDARD
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _showAdminPanel,
+                        icon: const Icon(Icons.admin_panel_settings, color: Colors.white70),
+                        label: const Text('ADMIN LOGIN', style: TextStyle(color: Colors.white, letterSpacing: 1.5)),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: Colors.white24),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        message,
-                        style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.5),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Contact Details
-                const Text(
-                  'Contact Administrator',
-                  style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1),
-                ),
-                const SizedBox(height: 16),
-                
-                _buildContactCard(
-                  name: 'Manav Nagpal',
-                  email: 'manav.nagpal2005@gmail.com',
-                  phone: '+91 98968 17707',
-                ),
-
-                const Spacer(),
-
-                // Admin Unlock Button
-                GestureDetector(
-                  onDoubleTap: _showAdminPanel,
-                  onLongPress: _showAdminPanel,
-                  child: TextButton.icon(
-                    onPressed: _showAdminPanel,
-                    icon: const Icon(Icons.admin_panel_settings_outlined, color: Colors.white30),
-                    label: const Text('Admin Unlock', style: TextStyle(color: Colors.white30)),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+            if (_isLoading)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              ),
+          ],
         ),
       ),
     );

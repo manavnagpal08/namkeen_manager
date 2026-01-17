@@ -489,8 +489,8 @@ class DatabaseService {
     return _settingsRef.doc('app_config').snapshots().map((doc) {
       if (doc.exists && doc.data() != null) {
         final data = doc.data() as Map<String, dynamic>;
-        // EMERGENCY OVERRIDE: Unlock the app
-        data['is_locked'] = false; 
+        // EMERGENCY OVERRIDE: Unlock the app (comment this out later)
+        // data['is_locked'] = false; 
         return data; 
       }
       // Default Config (Unlocked)
