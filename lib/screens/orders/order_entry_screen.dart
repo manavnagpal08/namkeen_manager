@@ -56,15 +56,24 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
     }
 
     final db = Provider.of<DatabaseService>(context);
-    final size = MediaQuery.of(context).size;
-    final bool isMobile = size.width < 900;
-    
     return StreamBuilder<CompanySettingsModel>(
       stream: db.getCompanySettings(),
       builder: (context, settingsSnap) {
           final settings = settingsSnap.data ?? CompanySettingsModel.defaults();
           final effectiveGstRate = settings.gstRate;
           _currentGstRate = effectiveGstRate;
+
+          // If order completed, show receipt inline (preserves sidebar)
+          if (_completedOrder != null) {
+             return ReceiptPreviewScreen(
+               order: _completedOrder!, 
+               settings: settings, 
+               onReturn: _resetPos
+             );
+          }
+
+        final size = MediaQuery.of(context).size;
+        final bool isMobile = size.width < 900;
 
         Widget mainContent = isMobile 
           ? TabBarView(

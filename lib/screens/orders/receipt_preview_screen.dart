@@ -10,23 +10,20 @@ import 'package:provider/provider.dart';
 
 class ReceiptPreviewScreen extends StatelessWidget {
   final OrderModel order;
+  final CompanySettingsModel settings;
   final VoidCallback? onReturn;
   final PrintingService _printingService = PrintingService();
 
-  ReceiptPreviewScreen({super.key, required this.order, this.onReturn});
+  ReceiptPreviewScreen({
+    super.key, 
+    required this.order, 
+    required this.settings,
+    this.onReturn
+  });
 
   @override
   Widget build(BuildContext context) {
-    final db = Provider.of<DatabaseService>(context, listen: false); // We use stream below
-    
-    return StreamBuilder<CompanySettingsModel>(
-      stream: db.getCompanySettings(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        
-        final settings = snapshot.data ?? CompanySettingsModel.defaults();
-
-        return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Receipt Preview'),
         backgroundColor: AppTheme.primary,
@@ -40,98 +37,122 @@ class ReceiptPreviewScreen extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                  if (settings.showLogo && settings.logoBase64 != null && settings.logoBase64!.isNotEmpty)
-                        Builder(
-                          builder: (context) {
-                            try {
-                              return Image.memory(
-                                base64Decode(settings.logoBase64!),
-                                height: 60,
-                                errorBuilder: (c, e, s) => const SizedBox.shrink(),
-                              );
-                            } catch (e) {
-                              return const SizedBox.shrink();
-                            }
-                          },
-                        )
-                      else if (settings.showLogo)
-                         Image.asset('assets/images/logo.png', height: 60, errorBuilder: (c,e,s) => const SizedBox.shrink()),
-                      
-                      const SizedBox(height: 8),
-                      // if (settings.showLogo) ...[
-                      //     if (settings.logoBase64 != null)
-                      //        Image.memory(base64Decode(settings.logoBase64!), height: 60)
-                      //     else
-                      //        Image.asset('assets/images/logo.png', height: 60, errorBuilder: (c,e,s) => const SizedBox.shrink()),
-                      //     const SizedBox(height: 8),
-                      // ],
-                      Text(settings.companyName.toUpperCase(), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                      Text(settings.address, style: const TextStyle(fontSize: 14, color: Colors.grey), textAlign: TextAlign.center),
-                      Text('Ph: ${settings.phone} | GST: ${settings.gstNumber}', style: const TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
-                      const Divider(height: 32),
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text('Date: ${order.date.toIso8601String().substring(0,10)}'),
-                        Text('Time: ${order.date.toIso8601String().substring(11,16)}'),
-                      ]),
-                      const SizedBox(height: 8),
-                      Text('Customer: ${order.customerName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const Divider(height: 32),
-                      
-                      // Items
-                      ...order.items.map((item) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Expanded(child: Text(item.productName)),
-                            Text('${item.quantity.toInt()} x ', style: const TextStyle(color: Colors.grey)),
-                            Text('Rs.${item.price}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      )),
-                      
-                      const Divider(height: 32),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Card(
+                    elevation: 4,
+                    shadowColor: Colors.black12,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('TOTAL', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          Text('Rs.${order.totalAmount}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                      if (settings.showLogo && settings.logoBase64 != null && settings.logoBase64!.isNotEmpty)
+                            Builder(
+                              builder: (context) {
+                                try {
+                                  return Image.memory(
+                                    base64Decode(settings.logoBase64!),
+                                    height: 80,
+                                    errorBuilder: (c, e, s) => const SizedBox.shrink(),
+                                  );
+                                } catch (e) {
+                                  return const SizedBox.shrink();
+                                }
+                              },
+                            )
+                          else if (settings.showLogo)
+                             Image.asset('assets/images/logo.png', height: 80, errorBuilder: (c,e,s) => const SizedBox.shrink()),
+                          
+                          const SizedBox(height: 16),
+                          Text(settings.companyName.toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2), textAlign: TextAlign.center),
+                          const SizedBox(height: 4),
+                          Text(settings.address, style: const TextStyle(fontSize: 13, color: Colors.grey), textAlign: TextAlign.center),
+                          Text('Ph: ${settings.phone} | GST: ${settings.gstNumber}', style: const TextStyle(fontSize: 11, color: Colors.grey), textAlign: TextAlign.center),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Divider(height: 1),
+                          ),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            Text('Date: ${DateFormat('dd/MM/yyyy').format(order.date)}', style: const TextStyle(fontSize: 12)),
+                            Text('Time: ${DateFormat('HH:mm').format(order.date)}', style: const TextStyle(fontSize: 12)),
+                          ]),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text('Customer: ${order.customerName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Divider(height: 1),
+                          ),
+                          
+                          // Items Header
+                          const Row(
+                            children: [
+                              Expanded(child: Text('PRODUCT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey))),
+                              SizedBox(width: 40, child: Text('QTY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey), textAlign: TextAlign.center)),
+                              SizedBox(width: 80, child: Text('TOTAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey), textAlign: TextAlign.right)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Items
+                          ...order.items.map((item) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Row(
+                              children: [
+                                Expanded(child: Text(item.productName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                                SizedBox(width: 40, child: Text(item.quantity.toInt().toString(), style: const TextStyle(fontSize: 13), textAlign: TextAlign.center)),
+                                SizedBox(width: 80, child: Text('₹${(item.quantity * item.price).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.right)),
+                              ],
+                            ),
+                          )),
+                          
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Divider(height: 1, thickness: 1.5),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('TOTAL AMOUNT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('₹${order.totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                            ],
+                          ),
+                          const SizedBox(height: 48),
+                          Text(settings.footerMessage, style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
                         ],
                       ),
-                      const SizedBox(height: 32),
-                      const SizedBox(height: 32),
-                      Text(settings.footerMessage, style: const TextStyle(fontStyle: FontStyle.italic), textAlign: TextAlign.center), // This was visual
-      // For thermal printer bytes:
-      // bytes += generator.text(settings.footerMessage, styles: const PosStyles(align: PosAlign.center, bold: true)); // This line is commented out as it's not valid Flutter UI code here
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
             Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10, offset: const Offset(0, -5))]
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: const Icon(Icons.picture_as_pdf, color: Colors.blue),
-                    label: const Text('Print Invoice (PDF)'),
+                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                    label: const Text('Download PDF'),
                     onPressed: () => _printingService.printOrderPDF(order, settings),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     icon: const Icon(Icons.print),
-                    label: const Text('Print Thermal'),
+                    label: const Text('Print Receipt'),
                     onPressed: () async {
                        final status = await _printingService.printOrderThermal(order, settings);
                        if (context.mounted) {
@@ -167,8 +188,6 @@ class ReceiptPreviewScreen extends StatelessWidget {
           )
         ],
       ),
-      );
-      },
     );
   }
 }
