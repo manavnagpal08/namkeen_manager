@@ -50,13 +50,13 @@ class ReceiptPreviewScreen extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                      if (settings.showLogo && settings.logoBase64 != null && settings.logoBase64!.isNotEmpty)
+                          if (settings.showLogo && settings.logoBase64 != null && settings.logoBase64!.isNotEmpty)
                             Builder(
                               builder: (context) {
                                 try {
                                   return Image.memory(
                                     base64Decode(settings.logoBase64!),
-                                    height: 80,
+                                    height: 50, // Minimized
                                     errorBuilder: (c, e, s) => const SizedBox.shrink(),
                                   );
                                 } catch (e) {
@@ -65,65 +65,86 @@ class ReceiptPreviewScreen extends StatelessWidget {
                               },
                             )
                           else if (settings.showLogo)
-                             Image.asset('assets/images/logo.png', height: 80, errorBuilder: (c,e,s) => const SizedBox.shrink()),
+                             Image.asset('assets/images/logo.png', height: 50, errorBuilder: (c,e,s) => const SizedBox.shrink()),
                           
-                          const SizedBox(height: 16),
-                          Text(settings.companyName.toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2), textAlign: TextAlign.center),
-                          const SizedBox(height: 4),
-                          Text(settings.address, style: const TextStyle(fontSize: 13, color: Colors.grey), textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          Text(settings.companyName.toUpperCase(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.2), textAlign: TextAlign.center),
+                          const SizedBox(height: 2),
+                          Text(settings.address, style: const TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
                           Text('Ph: ${settings.phone} | GST: ${settings.gstNumber}', style: const TextStyle(fontSize: 11, color: Colors.grey), textAlign: TextAlign.center),
                           const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 24),
+                            padding: EdgeInsets.symmetric(vertical: 20),
                             child: Divider(height: 1),
                           ),
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Text('Date: ${DateFormat('dd/MM/yyyy').format(order.date)}', style: const TextStyle(fontSize: 12)),
-                            Text('Time: ${DateFormat('HH:mm').format(order.date)}', style: const TextStyle(fontSize: 12)),
+                            Text('Date: ${DateFormat('dd/MM/yyyy').format(order.date)}', style: const TextStyle(fontSize: 11)),
+                            Text('Time: ${DateFormat('HH:mm').format(order.date)}', style: const TextStyle(fontSize: 11)),
                           ]),
                           const SizedBox(height: 12),
                           Align(
                             alignment: Alignment.centerLeft,
-                            child: Text('Customer: ${order.customerName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            child: Text('Customer: ${order.customerName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           ),
                           const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
+                            padding: EdgeInsets.symmetric(vertical: 16),
                             child: Divider(height: 1),
                           ),
                           
                           // Items Header
                           const Row(
                             children: [
-                              Expanded(child: Text('PRODUCT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey))),
-                              SizedBox(width: 40, child: Text('QTY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey), textAlign: TextAlign.center)),
-                              SizedBox(width: 80, child: Text('TOTAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey), textAlign: TextAlign.right)),
+                              Expanded(child: Text('PRODUCT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey))),
+                              SizedBox(width: 40, child: Text('QTY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey), textAlign: TextAlign.center)),
+                              SizedBox(width: 80, child: Text('TOTAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey), textAlign: TextAlign.right)),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           // Items
                           ...order.items.map((item) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
                               children: [
-                                Expanded(child: Text(item.productName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-                                SizedBox(width: 40, child: Text(item.quantity.toInt().toString(), style: const TextStyle(fontSize: 13), textAlign: TextAlign.center)),
-                                SizedBox(width: 80, child: Text('₹${(item.quantity * item.price).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.right)),
+                                Expanded(child: Text(item.productName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+                                SizedBox(width: 40, child: Text(item.quantity.toInt().toString(), style: const TextStyle(fontSize: 12), textAlign: TextAlign.center)),
+                                SizedBox(width: 80, child: Text('₹${(item.quantity * item.price).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), textAlign: TextAlign.right)),
                               ],
                             ),
                           )),
                           
                           const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Divider(height: 1, thickness: 1.5),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Divider(height: 1, thickness: 1),
                           ),
+                          // GST Breakdown
+                          if (order.gstAmount > 0) ...[
+                             Row(
+                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                               children: [
+                                 const Text('Subtotal', style: TextStyle(fontSize: 13)),
+                                 Text('₹${(order.totalAmount - order.gstAmount).toStringAsFixed(2)}', style: const TextStyle(fontSize: 13)),
+                               ],
+                             ),
+                             const SizedBox(height: 4),
+                             Row(
+                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                               children: [
+                                 Text('GST (${settings.gstRate}%)', style: const TextStyle(fontSize: 13)),
+                                 Text('₹${order.gstAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                               ],
+                             ),
+                             const SizedBox(height: 12),
+                          ],
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('TOTAL AMOUNT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('₹${order.totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                              const Text('TOTAL AMOUNT', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              Text('₹${order.totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
                             ],
                           ),
-                          const SizedBox(height: 48),
-                          Text(settings.footerMessage, style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
+                          const SizedBox(height: 40),
+                          Text(settings.footerMessage, style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 11, color: Colors.grey), textAlign: TextAlign.center),
+                          const SizedBox(height: 4),
+                          const Text('bill generated by FLIPCLIP system 9896817707', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primary), textAlign: TextAlign.center),
                         ],
                       ),
                     ),
