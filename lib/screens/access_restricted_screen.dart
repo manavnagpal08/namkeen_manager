@@ -121,7 +121,12 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
                     GestureDetector(
                       onLongPress: _showAdminPanel,
                       onDoubleTap: _showAdminPanel,
-                      child: const Icon(Icons.lock_rounded, size: 80, color: Colors.white24),
+                      behavior: HitTestBehavior.opaque, // CRITICAL: Captures touches on transparent pixels
+                      child: Container(
+                        // Invisible touch target padding to make it easier to hit
+                        padding: const EdgeInsets.all(32), 
+                        child: const Icon(Icons.lock_rounded, size: 80, color: Colors.white24),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     
