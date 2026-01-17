@@ -47,8 +47,8 @@ class SupportScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(blurRadius: 15, color: Colors.blue.withValues(alpha: 0.1))],
-                  border: Border.all(color: AppTheme.primary.withValues(alpha: 0.1), width: 2),
+                  boxShadow: [BoxShadow(blurRadius: 15, color: Colors.blue.withOpacity(0.1))],
+                  border: Border.all(color: AppTheme.primary.withOpacity(0.1), width: 2),
                 ),
                 child: const Icon(Icons.rocket_launch, size: 64, color: AppTheme.primary),
               ),

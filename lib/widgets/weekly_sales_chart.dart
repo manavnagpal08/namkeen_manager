@@ -81,7 +81,7 @@ class WeeklySalesChart extends StatelessWidget {
                   backDrawRodData: BackgroundBarChartRodData(
                     show: true,
                     toY: maxY * 1.1,
-                    color: Colors.grey.withValues(alpha: 0.1),
+                    color: Colors.grey.withOpacity(0.1),
                   ),
                 ),
               ],

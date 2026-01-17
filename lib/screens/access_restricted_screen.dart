@@ -122,7 +122,7 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: Colors.white12),
                     boxShadow: [
@@ -222,3 +222,6 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
         ],
       ),
     );
+  }
+}
+
