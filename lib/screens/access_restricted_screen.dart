@@ -117,7 +117,12 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.lock_rounded, size: 80, color: Colors.white24),
+                    // SECRET TRIGGER 1: Long Press the Lock Icon
+                    GestureDetector(
+                      onLongPress: _showAdminPanel,
+                      onDoubleTap: _showAdminPanel,
+                      child: const Icon(Icons.lock_rounded, size: 80, color: Colors.white24),
+                    ),
                     const SizedBox(height: 24),
                     
                     // Alert Card
@@ -133,6 +138,7 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
                       ),
                       child: Column(
                         children: [
+                          // SECRET TRIGGER 2: Long Press the Title
                           GestureDetector(
                             onLongPress: _showAdminPanel,
                             child: const Text(
@@ -172,21 +178,7 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
                     ),
 
                     const Spacer(),
-
-                    // Admin Unlock Button - VISIBLE & STANDARD
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _showAdminPanel,
-                        icon: const Icon(Icons.admin_panel_settings, color: Colors.white70),
-                        label: const Text('ADMIN LOGIN', style: TextStyle(color: Colors.white, letterSpacing: 1.5)),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: Colors.white24),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
+                    // No visible button
                   ],
                 ),
               ),
