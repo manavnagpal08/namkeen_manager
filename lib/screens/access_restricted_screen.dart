@@ -131,15 +131,18 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        'ACCESS RESTRICTED',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 3,
+                      GestureDetector(
+                        onLongPress: _showAdminPanel,
+                        child: const Text(
+                          'ACCESS RESTRICTED',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 3,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       Text(
