@@ -50,10 +50,6 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // If order completed, show receipt inline (preserves sidebar)
-    if (_completedOrder != null) {
-       return ReceiptPreviewScreen(order: _completedOrder!, onReturn: _resetPos);
-    }
 
     final db = Provider.of<DatabaseService>(context);
     return StreamBuilder<CompanySettingsModel>(
