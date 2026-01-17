@@ -101,7 +101,22 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
     final contact = widget.config['developer_contact'] ?? 'Contact Admin';
 
     return Scaffold(
+      extendBodyBehindAppBar: true, // Allow gradient to show behind app bar
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          // Fallback Unlock Button in AppBar (Always works)
+          IconButton(
+            icon: const Icon(Icons.lock_open, color: Colors.white24),
+            onPressed: _showAdminPanel,
+            tooltip: 'Admin Unlock',
+          ),
+        ],
+      ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -109,16 +124,17 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
             colors: [Color(0xFF8B0000), Color(0xFF2B0000)], // Deep Red Gradient
           ),
         ),
-        child: Stack(
-          children: [
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // SECRET TRIGGER 1: Long Press the Lock Icon
-                    GestureDetector(
+        child: SelectionArea( // Allows text copying
+          child: Stack(
+            children: [
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // SECRET TRIGGER 1: Long Press the Lock Icon
+                      GestureDetector(
                       onLongPress: _showAdminPanel,
                       onDoubleTap: _showAdminPanel,
                       behavior: HitTestBehavior.opaque, // CRITICAL: Captures touches on transparent pixels
@@ -198,6 +214,7 @@ class _AccessRestrictedScreenState extends State<AccessRestrictedScreen> {
           ],
         ),
       ),
+    ), // Close Container and SelectionArea
     );
   }
 
