@@ -16,11 +16,11 @@ class AuthService with ChangeNotifier {
 
   Future<bool> login(String department, String password) async {
     // 1. Check Hardcoded Admin for initial setup safety
-    if (department == 'Admin' && password == 'admin') {
+    if ((department == 'Admin' || department == 'Admin2' || department == 'admin2') && password == 'admin') {
        _currentAccount = DepartmentAccountModel(
-         id: 'admin_sys',
-         departmentName: 'Admin',
-         username: 'admin',
+         id: 'admin_sys_${department.toLowerCase()}',
+         departmentName: department,
+         username: department.toLowerCase(),
          password: 'hashed',
          role: 'Admin'
        );

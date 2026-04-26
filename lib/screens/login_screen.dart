@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               : [];
 
                           if (!deptNames.contains('Admin')) deptNames.insert(0, 'Admin');
-
+                          if (!deptNames.contains('admin2')) deptNames.insert(1, 'admin2');
                           return DropdownButtonFormField<String>(
                             value: _selectedDept,
                             hint: const Text("Select Department", style: TextStyle(fontSize: 14)),
